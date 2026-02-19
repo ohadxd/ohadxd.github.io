@@ -1,0 +1,433 @@
+﻿<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Roblox Studio — שיעור 1: היכרות עם הממשק</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+  <div class="wrap">
+    <nav class="site-nav" aria-label="ניווט עליון">
+      <a href="/">בית</a>
+      <a href="/courses/">קורסים</a>
+      <a href="/courses/roblox/">Roblox</a>
+      <a href="/courses/roblox/level-a/">רמה א</a>
+    </nav>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="title">
+          <div class="badge"><span class="dot"></span> Roblox Studio • שיעור 1</div>
+          <h1>פתיחת פרויקט ראשון + בניית Obby בסיסי</h1>
+          <p class="subtitle">
+            נלמד לפתוח פרויקט חדש, למחוק את הרצפה,
+            ליצור Parts, לשנות Material ו-Color דרך העיגולים,
+            ולהבין מה זה <b>CanCollide</b>.
+          </p>
+          <div>
+            <span class="pill">⏱️ 60 דקות</span>
+            <span class="pill">🎯 כיתה ד׳–ו׳</span>
+            <span class="pill">🧩 תוצר: Obby ראשון</span>
+          </div>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="k">מה נלמד</div>
+            <div class="v">בסיס לבניית משחק</div>
+          </div>
+          <div class="stat">
+            <div class="k">כלים</div>
+            <div class="v">Part • Material • Color</div>
+          </div>
+          <div class="stat">
+            <div class="k">מושג חשוב</div>
+            <div class="v">CanCollide</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="card quick-guide" aria-label="איך להשתמש בעמוד">
+      <h2><span class="icon">🕹️</span> איך עובדים בעמוד?</h2>
+      <div class="quick-items">
+        <div class="quick-item"><b>1.</b> קוראים שלב אחד בכל פעם.</div>
+        <div class="quick-item"><b>2.</b> עושים את מה שרשום ב-Roblox Studio.</div>
+        <div class="quick-item"><b>3.</b> לוחצים על GIF כדי להגדיל למסך מלא.</div>
+      </div>
+    </section>
+
+    <main class="grid single-col">
+
+      <!-- LEFT COLUMN -->
+      <section class="card">
+
+        <h2><span class="icon">1</span> פתיחת פרויקט חדש</h2>
+        <div class="progress-box" aria-live="polite">
+          <div class="progress-text">התקדמות: <b id="doneCount">0</b>/<b id="totalCount">0</b> שלבים</div>
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <div class="timeline">
+
+          <!-- שלב 1 -->
+          <div class="slot" data-step="1">
+            <div class="top">
+              <div class="title">שלב 1 — פתיחת פרויקט חדש</div>
+              <div class="time"><span class="clock"></span> 5 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>פתחו Roblox Studio</li>
+              <li>בחרו Template בשם <b>Baseplate</b></li>
+            </ol>
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-1/part-1.gif" alt="בחירת Baseplate כתבנית התחלה" />
+              </button>
+              <figcaption>בחרו Template בשם Baseplate <span class="tap-hint">לחיצה על התמונה = הגדלה</span></figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 2 -->
+          <div class="slot" data-step="2">
+            <div class="top">
+              <div class="title">שלב 2 — מחיקת הרצפה</div>
+              <div class="time"><span class="clock"></span> 5 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>פתחו את Explorer</li>
+              <li>בתוך Workspace מצאו <b>Baseplate</b></li>
+              <li>למחיקה אפשר ללחוץ <b>Del</b> או <b>Delete</b> במקלדת</li>
+              <li>אם זה לא עובד: קליק ימני על <b>Baseplate</b> ואז <b>Delete</b></li>
+            </ol>
+
+            <div class="key-visual" aria-label="עזרה למציאת כפתור מחיקה במקלדת">
+              <figure class="key-photo">
+                <img src="/assets/roblox/level-a/lesson-1/del-key.png" alt="כך נראה בדרך כלל כפתור Del או Delete במקלדת" />
+                <figcaption>כך נראה מקש Del / Delete ברוב המקלדות</figcaption>
+              </figure>
+              <div class="key-visual-head">
+                <b>איך נראה כפתור המחיקה?</b>
+                <div class="kbd-type-switch" role="tablist" aria-label="בחירת סוג מקלדת">
+                  <button class="kbd-type-btn is-active" type="button" data-kbd-type="full" role="tab" aria-selected="true">מקלדת מלאה</button>
+                  <button class="kbd-type-btn" type="button" data-kbd-type="laptop" role="tab" aria-selected="false">לפטופ Windows</button>
+                  <button class="kbd-type-btn" type="button" data-kbd-type="mac" role="tab" aria-selected="false">MacBook</button>
+                </div>
+              </div>
+              <div class="keyboard-demo" id="keyboardDemo">
+                <div class="key-row">
+                  <span class="keycap key-normal" id="keyLabelMain">Del</span>
+                  <span class="keycap key-sub" id="keyLabelAlt">Delete</span>
+                </div>
+                <div class="key-hint" id="keyHintText">
+                  בדרך כלל בפינה הימנית העליונה של המקלדת.
+                </div>
+              </div>
+            </div>
+
+            <div class="callout warn">
+              <div class="row">
+                <div class="badge2">!</div>
+                <div>
+                  למה מוחקים? כדי שמי שנופל במסלול — ייפול באמת!
+                </div>
+              </div>
+            </div>
+
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-1/part-2.gif" alt="מחיקת Baseplate דרך Explorer" />
+              </button>
+              <figcaption>מחיקת Baseplate דרך Explorer <span class="tap-hint">לחיצה על התמונה = הגדלה</span></figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 3 -->
+          <div class="slot" data-step="3">
+            <div class="top">
+              <div class="title">שלב 3 — יצירת Part ראשון</div>
+              <div class="time"><span class="clock"></span> 6 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>לחצו על <b>Home</b></li>
+              <li>בחרו <b>Part</b></li>
+              <li>נוצר חלק חדש בסצנה</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-3.gif" alt="תמונת הדרכה לשלב 3" />
+              <figcaption>תמונת הדרכה לשלב 3</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 4 -->
+          <div class="slot" data-step="4">
+            <div class="top">
+              <div class="title">שלב 4 — Move (הזזה)</div>
+              <div class="time"><span class="clock"></span> 6 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בחרו את ה-Part</li>
+              <li>לחצו על <b>Move</b> או על מקש <b>2</b></li>
+              <li>הזיזו את החלק למקום הרצוי</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-4.gif" alt="תמונת הדרכה לשלב 4" />
+              <figcaption>תמונת הדרכה לשלב 4</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 5 -->
+          <div class="slot" data-step="5">
+            <div class="top">
+              <div class="title">שלב 5 — Scale (שינוי גודל)</div>
+              <div class="time"><span class="clock"></span> 6 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בחרו את ה-Part</li>
+              <li>לחצו על <b>Scale</b> או על מקש <b>3</b></li>
+              <li>שנו אורך/רוחב/גובה</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-5.gif" alt="תמונת הדרכה לשלב 5" />
+              <figcaption>תמונת הדרכה לשלב 5</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 6 -->
+          <div class="slot" data-step="6">
+            <div class="top">
+              <div class="title">שלב 6 — Rotate (סיבוב)</div>
+              <div class="time"><span class="clock"></span> 6 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בחרו את ה-Part</li>
+              <li>לחצו על <b>Rotate</b> או על מקש <b>4</b></li>
+              <li>סובבו את החלק לזווית הרצויה</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-6.gif" alt="תמונת הדרכה לשלב 6" />
+              <figcaption>תמונת הדרכה לשלב 6</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 7 -->
+          <div class="slot" data-step="7">
+            <div class="top">
+              <div class="title">שלב 7 — Anchor (שיישאר באוויר)</div>
+              <div class="time"><span class="clock"></span> 6 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בחרו את ה-Part</li>
+              <li>בסרגל העליון או ב-Properties הפעילו <b>Anchor</b></li>
+              <li>בדקו שהחלק לא נופל כשמריצים Play</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-7.gif" alt="תמונת הדרכה לשלב 7" />
+              <figcaption>תמונת הדרכה לשלב 7</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 8 -->
+          <div class="slot" data-step="8">
+            <div class="top">
+              <div class="title">שלב 8 — Lock (לא לבחור בטעות)</div>
+              <div class="time"><span class="clock"></span> 5 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>סמנו Part</li>
+              <li>סמנו אותו כ-<b>Locked</b></li>
+              <li>ככה לא נבחר אותו בטעות בזמן עריכה</li>
+              <li>כדי לבטל נעילה: החזירו ל-<b>Unlock</b></li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/lock.gif" alt="הדגמה איך נועלים חלק עם Lock" />
+              <figcaption>Lock: כך נועלים חלק כדי שלא ייבחר בטעות</figcaption>
+            </figure>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/unlock.gif" alt="הדגמה איך מבטלים נעילה לחלק עם Unlock" />
+              <figcaption>Unlock: כך מבטלים נעילה כשצריך לערוך שוב</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 9 -->
+          <div class="slot" data-step="9">
+            <div class="top">
+              <div class="title">שלב 9 — שקיפות (Transparency)</div>
+              <div class="time"><span class="clock"></span> 7 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בחרו Part</li>
+              <li>ב-Properties מצאו <b>Transparency</b></li>
+              <li>הגדילו ערך כדי להפוך את החלק לשקוף</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-9.gif" alt="תמונת הדרכה לשלב 9" />
+              <figcaption>תמונת הדרכה לשלב 9</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 10 -->
+          <div class="slot" data-step="10">
+            <div class="top">
+              <div class="title">שלב 10 — Zoom To למציאת חלק אבוד</div>
+              <div class="time"><span class="clock"></span> 5 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בחרו את החלק ב-Explorer</li>
+              <li>לחצו <b>F</b> כדי להתמקד בו</li>
+              <li>או קליק ימני על החלק → <b>Zoom To</b></li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-10.gif" alt="תמונת הדרכה לשלב 10" />
+              <figcaption>תמונת הדרכה לשלב 10</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 11 -->
+          <div class="slot" data-step="11">
+            <div class="top">
+              <div class="title">שלב 11 — שינוי Material ו-Color</div>
+              <div class="time"><span class="clock"></span> 10 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>סמנו Part</li>
+              <li>לחצו על עיגול <b>Material</b></li>
+              <li>לחצו על עיגול <b>Color</b></li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-11.gif" alt="תמונת הדרכה לשלב 11" />
+              <figcaption>תמונת הדרכה לשלב 11</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 12 -->
+          <div class="slot" data-step="12">
+            <div class="top">
+              <div class="title">שלב 12 — CanCollide</div>
+              <div class="time"><span class="clock"></span> 7 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בחרו Part</li>
+              <li>ב-Properties מצאו <b>CanCollide</b></li>
+              <li>כבו כדי ליפול דרך הבלוק</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-12.gif" alt="תמונת הדרכה לשלב 12" />
+              <figcaption>תמונת הדרכה לשלב 12</figcaption>
+            </figure>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/examplecollide.gif" alt="דוגמה להבדל בין בלוק עם CanCollide לבלוק בלי CanCollide" />
+              <figcaption>דוגמה: בלוק עם CanCollide מול בלוק בלי CanCollide</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 13 -->
+          <div class="slot" data-step="13">
+            <div class="top">
+              <div class="title">שלב 13 — שכפול חלקים (Duplicate)</div>
+              <div class="time"><span class="clock"></span> 6 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בחרו את ה-Part שתרצו לשכפל</li>
+              <li>אפשרות 1: קליק ימני על החלק ואז <b>Duplicate</b></li>
+              <li>אפשרות 2: קיצור מקלדת <b>Ctrl + D</b></li>
+              <li>הזיזו את העותק למקום חדש במסלול</li>
+            </ol>
+            <div class="callout good">
+              <div class="row">
+                <div class="badge2">TIP</div>
+                <div>
+                  אפשר לסמן כמה פריטים יחד עם <b>Ctrl + קליק שמאלי</b>, ואז לשכפל את כולם בבת אחת עם <b>Ctrl + D</b>.
+                </div>
+              </div>
+            </div>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-13.gif" alt="תמונת הדרכה לשלב 13 - שכפול חלקים" />
+              <figcaption>Duplicate: שכפול חלק עם קליק ימני או Ctrl + D</figcaption>
+            </figure>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/multidup.gif" alt="שכפול כמה פריטים יחד אחרי סימון עם Ctrl + קליק שמאלי" />
+              <figcaption>שכפול מרובה: סימון כמה פריטים ואז Ctrl + D</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 14 -->
+          <div class="slot" data-step="14">
+            <div class="top">
+              <div class="title">שלב 14 — משימת בנייה: מסלול 8 בלוקים</div>
+              <div class="time"><span class="clock"></span> 12 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>בנו מסלול עם <b>8 בלוקים</b> לפחות</li>
+              <li>עצבו כל בלוק בצבע/חומר אחר</li>
+              <li>הגדירו שחלק מהבלוקים יהיו <b>מלכודת</b> (למשל CanCollide כבוי)</li>
+              <li>השאירו גם בלוקים בטוחים שאפשר לעמוד עליהם</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-14.gif" alt="תמונת הדרכה לשלב 14" />
+              <figcaption>תמונת הדרכה לשלב 14</figcaption>
+            </figure>
+          </div>
+
+          <!-- שלב 15 -->
+          <div class="slot" data-step="15">
+            <div class="top">
+              <div class="title">שלב 15 — בדיקה עם Play</div>
+              <div class="time"><span class="clock"></span> 8 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>לחצו Play</li>
+              <li>בדקו שהמסלול עובד</li>
+              <li>Stop לחזרה לעריכה</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-1/part-15.gif" alt="תמונת הדרכה לשלב 15" />
+              <figcaption>תמונת הדרכה לשלב 15</figcaption>
+            </figure>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <div class="small">
+        © שיעור 1 — Roblox Studio
+      </div>
+      <div class="back-links">
+        <a href="/courses/roblox/level-a/">חזרה לרמה א</a>
+        <a href="/courses/roblox/">חזרה לקורס Roblox</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <div class="lightbox" id="gifLightbox" aria-hidden="true">
+    <button class="lightbox-close" id="closeLightbox" type="button" aria-label="סגירה">✕</button>
+    <img id="lightboxImg" alt="GIF מוגדל" />
+  </div>
+
+  <script src="/js/lesson1.js"></script>
+</body>
+</html>
