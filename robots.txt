@@ -2,4 +2,4 @@
 Allow: /
 
 # Replace with your real production sitemap URL after deployment
-Sitemap: https://YOUR-DOMAIN.example/sitemap.xml
+Sitemap: https://funlab.co.il/sitemap.xml
