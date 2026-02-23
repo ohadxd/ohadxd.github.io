@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Replace https://YOUR-DOMAIN.example with your real domain -->
+  <url>
+    <loc>https://YOUR-DOMAIN.example/</loc>
+  </url>
+  <url>
+    <loc>https://YOUR-DOMAIN.example/courses/</loc>
+  </url>
+  <url>
+    <loc>https://YOUR-DOMAIN.example/courses/roblox/</loc>
+  </url>
+  <url>
+    <loc>https://YOUR-DOMAIN.example/courses/roblox/level-a/</loc>
+  </url>
+  <url>
+    <loc>https://YOUR-DOMAIN.example/courses/roblox/level-a/lesson-1/</loc>
+  </url>
+  <url>
+    <loc>https://YOUR-DOMAIN.example/courses/scratch/</loc>
+  </url>
+  <url>
+    <loc>https://YOUR-DOMAIN.example/courses/thunkable/</loc>
+  </url>
+</urlset>
