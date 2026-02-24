@@ -1,25 +1,25 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Replace https://YOUR-DOMAIN.example with your real domain -->
+  <!-- Domain: https://funlab.co.il -->
   <url>
-    <loc>https://YOUR-DOMAIN.example/</loc>
+    <loc>https://funlab.co.il/</loc>
   </url>
   <url>
-    <loc>https://YOUR-DOMAIN.example/courses/</loc>
+    <loc>https://funlab.co.il/courses/</loc>
   </url>
   <url>
-    <loc>https://YOUR-DOMAIN.example/courses/roblox/</loc>
+    <loc>https://funlab.co.il/courses/roblox/</loc>
   </url>
   <url>
-    <loc>https://YOUR-DOMAIN.example/courses/roblox/level-a/</loc>
+    <loc>https://funlab.co.il/courses/roblox/level-a/</loc>
   </url>
   <url>
-    <loc>https://YOUR-DOMAIN.example/courses/roblox/level-a/lesson-1/</loc>
+    <loc>https://funlab.co.il/courses/roblox/level-a/lesson-1/</loc>
   </url>
   <url>
-    <loc>https://YOUR-DOMAIN.example/courses/scratch/</loc>
+    <loc>https://funlab.co.il/courses/scratch/</loc>
   </url>
   <url>
-    <loc>https://YOUR-DOMAIN.example/courses/thunkable/</loc>
+    <loc>https://funlab.co.il/courses/thunkable/</loc>
   </url>
 </urlset>
