@@ -2,17 +2,19 @@ import {
   generateImageCallable,
   getSeatMapCallable,
   joinActivityCallable,
+  leaveActivityCallable,
   restoreActivityCallable,
   validatePromptStepsCallable
-} from "/js/functions-client.js?v=20260307-seat-reactive-1";
+} from "/js/functions-client.js?v=20260307-seat-ui-2";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
 const AUTOSAVE_DELAY_MS = 1400;
-const SEAT_POLL_MS = 5000;
+const SEAT_POLL_MS = 15000;
 
 const joinForm = document.getElementById("joinForm");
 const joinButton = document.getElementById("joinButton");
+const leaveSeatButton = document.getElementById("leaveSeatButton");
 const refreshSeatsButton = document.getElementById("refreshSeatsButton");
 const validateButton = document.getElementById("validateButton");
 const generateButton = document.getElementById("generateButton");
@@ -204,6 +206,7 @@ function setJoinLocked(isLocked) {
   classCodeInput.readOnly = isLocked;
   studentNameInput.readOnly = isLocked;
   refreshSeatsButton.disabled = isLocked;
+  leaveSeatButton.hidden = !isLocked;
   updateJoinButtonAvailability();
 }
 
@@ -258,12 +261,21 @@ function startSeatPolling() {
       return;
     }
 
+    if (state.sessionId) {
+      return;
+    }
+
     if (!normalizeClassCode(classCodeInput.value)) {
       return;
     }
 
     void loadSeatMap();
   }, SEAT_POLL_MS);
+}
+
+function stopSeatPolling() {
+  window.clearInterval(state.seatPollTimer);
+  state.seatPollTimer = null;
 }
 
 async function loadSeatMap({ showErrors = false } = {}) {
@@ -347,6 +359,7 @@ function applySession(payload) {
   persistSessionState();
   persistDraftState();
   setJoinLocked(true);
+  stopSeatPolling();
   enableActivity();
 }
 
@@ -392,6 +405,7 @@ async function restoreSavedSession() {
     state.seatNumber = 0;
     state.selectedSeatNumber = Number(savedSession.seatNumber || 0);
     setJoinLocked(false);
+    startSeatPolling();
 
     if (savedDraft?.steps) {
       fillSteps(savedDraft.steps);
@@ -531,7 +545,7 @@ generateButton.addEventListener("click", async () => {
     downloadImageButton.download = `funlab-seat-${state.seatNumber || "00"}-${Date.now()}.png`;
     downloadImageButton.hidden = false;
     if (payload.imageStoragePath) {
-      savedImageNote.textContent = `התמונה נשמרה גם בשרת: ${payload.imageStoragePath}`;
+      savedImageNote.textContent = "התמונה נשמרה גם בענן ואפשר להוריד אותה עכשיו.";
       savedImageNote.hidden = false;
     } else {
       savedImageNote.textContent = "התמונה זמינה כרגע להורדה מהעמוד הזה. שמירה קבועה בשרת תופעל אחרי חיבור Firebase Storage.";
@@ -607,8 +621,42 @@ refreshSeatsButton.addEventListener("click", () => {
   void loadSeatMap({ showErrors: true });
 });
 
+leaveSeatButton.addEventListener("click", async () => {
+  if (!state.sessionId) {
+    return;
+  }
+
+  leaveSeatButton.disabled = true;
+
+  try {
+    await leaveActivityCallable({ sessionId: state.sessionId });
+  } catch (error) {
+    showStatus("bad", "לא הצלחנו לקום מהמקום", error.message || "נסו שוב בעוד רגע.");
+    leaveSeatButton.disabled = false;
+    return;
+  }
+
+  state.sessionId = "";
+  state.studentName = "";
+  state.seatNumber = 0;
+  state.selectedSeatNumber = 0;
+  updateSeatBadge();
+  sessionBadge.textContent = "עדיין לא התחברתם";
+  updateRemainingBadge(0);
+  setJoinLocked(false);
+  leaveSeatButton.disabled = false;
+  activityCard.hidden = true;
+  resetResults();
+  removeStorage(STORAGE_SESSION_KEY);
+  removeStorage(STORAGE_DRAFT_KEY);
+  fillSteps(emptySteps);
+  showStatus("good", "קמתם מהמקום", "המקום שוחרר. אפשר לבחור מקום חדש בלוח.");
+  startSeatPolling();
+  void loadSeatMap();
+});
+
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
+  if (document.visibilityState === "visible" && !state.sessionId) {
     void loadSeatMap();
   }
 });

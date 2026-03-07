@@ -1058,31 +1058,59 @@ figure,
 }
 
 .example-grid{
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.example-title{
+  margin-top: 4px;
+  color: #7a5a17;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  text-transform: none;
 }
 
 .example-chip{
   appearance: none;
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 24px 1fr;
   align-items: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #edf6ff;
+  gap: 10px;
+  min-height: 56px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f9fcff, #edf6ff);
   border: 1px solid #cfe3f7;
   color: var(--text);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   cursor: pointer;
   font: inherit;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  text-align: right;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 8px 18px rgba(41,79,138,0.08);
+}
+
+.example-chip::before{
+  content: "✦";
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff4dc;
+  color: #d97706;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .example-chip:hover{
   transform: translateY(-1px);
   border-color: #0ea5e9;
   background: #e4f4ff;
+  box-shadow: 0 12px 22px rgba(14,165,233,0.14);
 }
 
 .example-chip:focus-visible{
@@ -1093,6 +1121,10 @@ figure,
 @media (max-width: 700px){
   .seat-board{
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .example-grid{
+    grid-template-columns: 1fr;
   }
 }
 

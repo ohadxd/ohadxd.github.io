@@ -28,7 +28,7 @@
     "about": "Prompt Engineering for Children"
   }
   </script>
-  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/style.css?v=20260307-seat-ui-2" />
 </head>
 <body>
   <div class="wrap">
@@ -107,6 +107,7 @@
           </div>
           <div class="action-row">
             <button id="joinButton" class="btn-primary" type="submit" disabled>כניסה לפעילות</button>
+            <button id="leaveSeatButton" class="btn-ghost" type="button" hidden>לקום מהמקום</button>
             <span id="sessionBadge" class="pill">עדיין לא התחברתם</span>
             <span id="remainingBadge" class="pill">נשארו 0 יצירות</span>
           </div>
@@ -120,6 +121,7 @@
             <label for="stepCharacter">1. דמות ראשית</label>
             <textarea id="stepCharacter" class="textarea" data-step-key="character" placeholder="למשל: רובוט קטן וחברותי"></textarea>
             <div class="field-help">מי הדמות שמופיעה בתמונה?</div>
+            <div class="example-title">רעיונות מהירים</div>
             <div class="example-grid" aria-label="רעיונות מהירים לדמות">
               <button class="example-chip" type="button" data-fill-target="stepCharacter" data-fill-value="רובוט קטן וחברותי">רובוט קטן</button>
               <button class="example-chip" type="button" data-fill-target="stepCharacter" data-fill-value="ילדה אמיצה עם תיק סגול">ילדה אמיצה</button>
@@ -131,6 +133,7 @@
             <label for="stepPlace">2. מקום / סביבה</label>
             <textarea id="stepPlace" class="textarea" data-step-key="place" placeholder="למשל: גן משחקים עתידני"></textarea>
             <div class="field-help">איפה הסיפור קורה?</div>
+            <div class="example-title">רעיונות מהירים</div>
             <div class="example-grid" aria-label="רעיונות מהירים למקום">
               <button class="example-chip" type="button" data-fill-target="stepPlace" data-fill-value="יער קסום עם עצים זוהרים">יער קסום</button>
               <button class="example-chip" type="button" data-fill-target="stepPlace" data-fill-value="גן משחקים עתידני וצבעוני">גן עתידני</button>
@@ -142,6 +145,7 @@
             <label for="stepAction">3. פעולה</label>
             <textarea id="stepAction" class="textarea" data-step-key="action" placeholder="למשל: אוסף עפיפון שנפל"></textarea>
             <div class="field-help">מה הדמות עושה ממש עכשיו?</div>
+            <div class="example-title">רעיונות מהירים</div>
             <div class="example-grid" aria-label="רעיונות מהירים לפעולה">
               <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מחזיר לילד בלון שעף">מחזיר בלון</button>
               <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מגלה אוצר קטן ומחייך">מגלה אוצר</button>
@@ -153,6 +157,7 @@
             <label for="stepStyle">4. סגנון חזותי</label>
             <textarea id="stepStyle" class="textarea" data-step-key="style" placeholder="למשל: איור ספר ילדים צבעוני"></textarea>
             <div class="field-help">איך התמונה צריכה להיראות?</div>
+            <div class="example-title">רעיונות מהירים</div>
             <div class="example-grid" aria-label="רעיונות מהירים לסגנון חזותי">
               <button class="example-chip" type="button" data-fill-target="stepStyle" data-fill-value="איור ספר ילדים צבעוני">איור ספר ילדים</button>
               <button class="example-chip" type="button" data-fill-target="stepStyle" data-fill-value="קומיקס צבעוני עם קווים ברורים">קומיקס צבעוני</button>
@@ -164,6 +169,7 @@
             <label for="stepDetail">5. פרט מיוחד</label>
             <textarea id="stepDetail" class="textarea" data-step-key="detail" placeholder="למשל: תרמיל עם כוכבים זוהרים"></textarea>
             <div class="field-help">איזה פרט קטן יעשה את התמונה מיוחדת?</div>
+            <div class="example-title">רעיונות מהירים</div>
             <div class="example-grid" aria-label="רעיונות מהירים לפרט מיוחד">
               <button class="example-chip" type="button" data-fill-target="stepDetail" data-fill-value="לב זוהר על החזה">לב זוהר</button>
               <button class="example-chip" type="button" data-fill-target="stepDetail" data-fill-value="כובע עם כוכבים נוצצים">כובע עם כוכבים</button>
@@ -217,6 +223,6 @@
     </footer>
   </div>
 
-  <script type="module" src="/js/prompt-lab.js?v=20260307-seat-reactive-1"></script>
+  <script type="module" src="/js/prompt-lab.js?v=20260307-seat-ui-2"></script>
 </body>
 </html>

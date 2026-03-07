@@ -46,6 +46,10 @@ export function restoreActivityCallable(data) {
   return callFunction("restoreActivity", data);
 }
 
+export function leaveActivityCallable(data) {
+  return callFunction("leaveActivity", data);
+}
+
 export function validatePromptStepsCallable(data) {
   return callFunction("validatePromptSteps", data);
 }

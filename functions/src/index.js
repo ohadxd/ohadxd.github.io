@@ -1,7 +1,7 @@
 "use strict";
 
 const admin = require("firebase-admin");
-const { randomUUID } = require("node:crypto");
+const { randomUUID, createHash } = require("node:crypto");
 const { GoogleGenAI } = require("@google/genai");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
@@ -202,11 +202,16 @@ async function generateImageWithGemini(ai, finalPromptHebrew) {
   throw new Error("Gemini image generation did not return image data.");
 }
 
-async function saveGeneratedImageToStorage(image, sessionData, sessionId, normalizedCode, usageId) {
+function buildStoragePartition(sessionId) {
+  return createHash("sha256").update(String(sessionId || "")).digest("hex").slice(0, 16);
+}
+
+async function saveGeneratedImageToStorage(image, sessionData, sessionId, usageId) {
   const bucket = storage.bucket();
   const fileExtension = image.mimeType === "image/jpeg" ? "jpg" : "png";
+  const storagePartition = buildStoragePartition(sessionId);
   const filePath =
-    `generated-images/${normalizedCode}/seat-${String(sessionData.seatNumber || "00").padStart(2, "0")}/` +
+    `generated-images/${storagePartition}/seat-${String(sessionData.seatNumber || "00").padStart(2, "0")}/` +
     `${usageId}.${fileExtension}`;
   const downloadToken = randomUUID();
   const imageBuffer = Buffer.from(image.imageBase64, "base64");
@@ -419,6 +424,34 @@ exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
   };
 });
 
+exports.leaveActivity = onCall(getCallableOptions(), async (request) => {
+  const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
+  const { classRef } = await loadClassAccessCode(sessionData.classCode);
+  const seatNumber = Number(sessionData.seatNumber || 0);
+
+  await sessionRef.set(
+    {
+      leftAt: FieldValue.serverTimestamp(),
+      lastSeenAt: FieldValue.serverTimestamp(),
+      status: "left",
+      updatedAt: FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  if (Number.isInteger(seatNumber) && seatNumber > 0) {
+    const seatRef = classRef.collection("seats").doc(formatSeatId(seatNumber));
+    await seatRef.delete().catch((error) => {
+      logger.error("Failed to release seat after leaveActivity", error);
+    });
+  }
+
+  return {
+    ok: true,
+    message: "קמתם מהמקום. אפשר לבחור עכשיו מקום חדש."
+  };
+});
+
 exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
   const { classRef } = await loadClassAccessCode(sessionData.classCode);
@@ -540,7 +573,6 @@ exports.generateImage = onCall(
         image,
         sessionData,
         sessionRef.id,
-        normalizedCode,
         usageRef.id
       );
     } catch (error) {
