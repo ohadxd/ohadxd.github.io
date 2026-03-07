@@ -2,7 +2,7 @@ import {
   generateImageCallable,
   joinActivityCallable,
   validatePromptStepsCallable
-} from "/js/firebase-client.js";
+} from "/js/functions-client.js";
 
 const joinForm = document.getElementById("joinForm");
 const joinButton = document.getElementById("joinButton");

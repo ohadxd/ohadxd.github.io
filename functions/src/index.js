@@ -34,6 +34,14 @@ function getCallableOptions(extra = {}) {
   };
 }
 
+function normalizeSecretValue(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.replace(/^\uFEFF/, "").trim();
+}
+
 function assertStringValue(value, code, message) {
   if (typeof value !== "string" || !value.trim()) {
     throw new HttpsError(code, message);
@@ -288,7 +296,7 @@ exports.generateImage = onCall(
       };
     }
 
-    const apiKey = GEMINI_API_KEY.value();
+    const apiKey = normalizeSecretValue(GEMINI_API_KEY.value());
 
     if (!apiKey) {
       throw new HttpsError(
