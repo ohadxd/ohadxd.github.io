@@ -44,7 +44,6 @@ const ACTIVITY_CONFIG = {
   activitySlug: "ai-prompt-lab",
   activityTitle: "מעבדת פרומפטים",
   region: "europe-west1",
-  textModel: "gemini-2.5-flash",
   imageModel: "gemini-2.5-flash-image",
   defaultGenerationsPerStudent: 3,
   defaultSeatCount: 25,
@@ -79,34 +78,8 @@ const ACTIVITY_CONFIG = {
     "דברו בעברית פשוטה, קצרה ומעודדת שמתאימה לתלמידי כיתות ה-ו."
 };
 
-const ENGLISH_STEP_TRANSLATION_INSTRUCTION = [
-  "You translate validated Hebrew image-building fields into short natural English phrases.",
-  "Translate faithfully from Hebrew to English.",
-  "Return strict JSON only.",
-  "Keep each value concise and faithful to the source.",
-  "Do not merge fields together.",
-  "Do not add extra ideas.",
-  "Do not leave any Hebrew words in the response.",
-  "Keys must be exactly: character, place, action, style, detail."
-].join(" ");
-
-const ENGLISH_STEP_TRANSLATION_SCHEMA = {
-  type: "object",
-  properties: {
-    character: { type: "string" },
-    place: { type: "string" },
-    action: { type: "string" },
-    style: { type: "string" },
-    detail: { type: "string" }
-  },
-  required: ["character", "place", "action", "style", "detail"],
-  additionalProperties: false
-};
-
 module.exports = {
   ACTIVITY_CONFIG,
-  ENGLISH_STEP_TRANSLATION_SCHEMA,
-  ENGLISH_STEP_TRANSLATION_INSTRUCTION,
   REQUIRED_STEPS,
   REQUIRED_STEP_KEYS
 };

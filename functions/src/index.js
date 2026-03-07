@@ -7,20 +7,12 @@ const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const { HttpsError, onCall } = require("firebase-functions/v2/https");
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
+const { ACTIVITY_CONFIG } = require("./config/agentConfig");
 const {
-  ACTIVITY_CONFIG,
-  ENGLISH_STEP_TRANSLATION_SCHEMA,
-  ENGLISH_STEP_TRANSLATION_INSTRUCTION
-} = require("./config/agentConfig");
-const {
-  buildDeterministicEnglishPrompt,
-  buildFallbackEnglishPrompt,
+  buildFinalHebrewPrompt,
   buildSessionDraft,
   buildValidationResponse,
-  containsHebrew,
-  getStepTemplatePayload,
   normalizeClassCode,
-  sanitizeEnglishField,
   sanitizePromptSteps,
   sanitizeStudentName
 } = require("./lib/promptFlow");
@@ -46,27 +38,6 @@ function normalizeSecretValue(value) {
   }
 
   return value.replace(/^\uFEFF/, "").trim();
-}
-
-function parseLooseJsonObject(text) {
-  if (typeof text !== "string") {
-    return null;
-  }
-
-  const trimmed = text.trim();
-
-  try {
-    return JSON.parse(trimmed);
-  } catch (error) {
-    const startIndex = trimmed.indexOf("{");
-    const endIndex = trimmed.lastIndexOf("}");
-
-    if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
-      return null;
-    }
-
-    return JSON.parse(trimmed.slice(startIndex, endIndex + 1));
-  }
 }
 
 function assertStringValue(value, code, message) {
@@ -208,78 +179,10 @@ async function touchSeatClaim(classRef, seatNumber, sessionId, studentName) {
   );
 }
 
-async function buildFinalEnglishPrompt(ai, steps) {
-  const payload = JSON.stringify(getStepTemplatePayload(steps), null, 2);
-  const translationPrompt =
-    "Translate these validated Hebrew image-building steps into English JSON with the same five fields:\n" +
-    payload;
-
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    try {
-      const response = await ai.models.generateContent({
-        model: ACTIVITY_CONFIG.textModel,
-        config: {
-          temperature: 0,
-          maxOutputTokens: 300,
-          thinkingConfig: {
-            thinkingBudget: 0
-          },
-          responseMimeType: "application/json",
-          responseJsonSchema: ENGLISH_STEP_TRANSLATION_SCHEMA,
-          systemInstruction: ENGLISH_STEP_TRANSLATION_INSTRUCTION
-        },
-        contents: translationPrompt
-      });
-
-      const translated = parseLooseJsonObject(response.text || "");
-
-      if (!translated) {
-        throw new Error("Gemini did not return parsable JSON for step translation.");
-      }
-
-      const translatedSteps = {
-        character: sanitizeEnglishField(translated.character, ""),
-        place: sanitizeEnglishField(translated.place, ""),
-        action: sanitizeEnglishField(translated.action, ""),
-        style: sanitizeEnglishField(translated.style, ""),
-        detail: sanitizeEnglishField(translated.detail, "")
-      };
-
-      const hasAllFields = Object.values(translatedSteps).every(Boolean);
-      const hasHebrewLeak = Object.values(translatedSteps).some((value) =>
-        containsHebrew(value)
-      );
-
-      if (hasAllFields && !hasHebrewLeak) {
-        return buildDeterministicEnglishPrompt(translatedSteps);
-      }
-
-      throw new Error("Translated prompt fields were incomplete or still contained Hebrew.");
-    } catch (error) {
-      logger.error("Failed to translate prompt steps with Gemini text model", {
-        attempt,
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  }
-
-  if (Object.values(steps).some((value) => containsHebrew(value))) {
-    throw new Error("Could not build a clean English prompt from the Hebrew steps.");
-  }
-
-  return buildDeterministicEnglishPrompt({
-    character: sanitizeEnglishField(steps.character, steps.character),
-    place: sanitizeEnglishField(steps.place, steps.place),
-    action: sanitizeEnglishField(steps.action, steps.action),
-    style: sanitizeEnglishField(steps.style, steps.style),
-    detail: sanitizeEnglishField(steps.detail, steps.detail)
-  }) || buildFallbackEnglishPrompt(steps);
-}
-
-async function generateImageWithGemini(ai, finalPrompt) {
+async function generateImageWithGemini(ai, finalPromptHebrew) {
   const response = await ai.models.generateContent({
     model: ACTIVITY_CONFIG.imageModel,
-    contents: finalPrompt,
+    contents: finalPromptHebrew,
     config: {
       responseModalities: ["TEXT", "IMAGE"]
     }
@@ -612,12 +515,12 @@ exports.generateImage = onCall(
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    let finalPromptEnglish;
+    let finalPromptHebrew;
     let image;
 
     try {
-      finalPromptEnglish = await buildFinalEnglishPrompt(ai, steps);
-      image = await generateImageWithGemini(ai, finalPromptEnglish);
+      finalPromptHebrew = buildFinalHebrewPrompt(steps);
+      image = await generateImageWithGemini(ai, finalPromptHebrew);
     } catch (error) {
       logger.error("Failed to generate an image from validated prompt steps", error);
       throw new HttpsError(
@@ -653,7 +556,7 @@ exports.generateImage = onCall(
         lastGeneratedAt: FieldValue.serverTimestamp(),
         lastGeneratedImagePath: storedImage.imageStoragePath || "",
         lastGeneratedImageUrl: storedImage.imageDownloadUrl || "",
-        lastGeneratedPrompt: finalPromptEnglish,
+        lastGeneratedPrompt: finalPromptHebrew,
         lastSeenAt: FieldValue.serverTimestamp(),
         status: "generated",
         updatedAt: FieldValue.serverTimestamp()
@@ -678,7 +581,7 @@ exports.generateImage = onCall(
     await usageRef.set({
       classCode: normalizedCode,
       createdAt: FieldValue.serverTimestamp(),
-      finalPromptEnglish,
+      finalPromptHebrew,
       generationIndex: newGenerationCount,
       imageDownloadUrl: storedImage.imageDownloadUrl || "",
       imageMimeType: image.mimeType,
@@ -695,7 +598,7 @@ exports.generateImage = onCall(
       imageDataUrl: `data:${image.mimeType};base64,${image.imageBase64}`,
       imageDownloadUrl: storedImage.imageDownloadUrl || "",
       imageStoragePath: storedImage.imageStoragePath || "",
-      finalPromptEnglish,
+      finalPromptHebrew,
       remainingGenerations: Math.max(generationLimit - newGenerationCount, 0),
       usageId: usageRef.id,
       message: ACTIVITY_CONFIG.generationSuccess

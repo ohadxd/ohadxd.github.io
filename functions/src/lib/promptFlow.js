@@ -1,10 +1,6 @@
 "use strict";
 
-const {
-  ACTIVITY_CONFIG,
-  REQUIRED_STEPS,
-  REQUIRED_STEP_KEYS
-} = require("../config/agentConfig");
+const { ACTIVITY_CONFIG, REQUIRED_STEPS, REQUIRED_STEP_KEYS } = require("../config/agentConfig");
 
 function normalizeText(value, maxLength) {
   if (typeof value !== "string") {
@@ -72,66 +68,30 @@ function buildValidationResponse(steps) {
   };
 }
 
-function buildFallbackEnglishPrompt(steps) {
-  return buildDeterministicEnglishPrompt(steps);
-}
-
-function sanitizeEnglishField(value, fallback) {
+function sanitizePromptField(value) {
   if (typeof value !== "string") {
-    return fallback;
-  }
-
-  const normalized = value
-    .replace(/[`"']/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return normalized || fallback;
-}
-
-function containsHebrew(value) {
-  return /[\u0590-\u05FF]/.test(value || "");
-}
-
-function normalizePromptClause(value) {
-  const normalized = sanitizeEnglishField(value, "");
-
-  if (!normalized) {
     return "";
   }
 
-  if (/^[A-Z]/.test(normalized)) {
-    return normalized.charAt(0).toLowerCase() + normalized.slice(1);
-  }
-
-  return normalized;
+  return value.replace(/[`"']/g, "").replace(/\s+/g, " ").trim();
 }
 
-function buildDeterministicEnglishPrompt(steps) {
-  const character = normalizePromptClause(steps.character);
-  const place = normalizePromptClause(steps.place);
-  const action = normalizePromptClause(steps.action);
-  const detail = normalizePromptClause(steps.detail);
-  const style = normalizePromptClause(steps.style);
+function buildFinalHebrewPrompt(steps) {
+  const character = sanitizePromptField(steps.character);
+  const place = sanitizePromptField(steps.place);
+  const action = sanitizePromptField(steps.action);
+  const style = sanitizePromptField(steps.style);
+  const detail = sanitizePromptField(steps.detail);
 
   return [
-    `Create a child-friendly image of ${character}.`,
-    `Setting: ${place}.`,
-    `Action: ${action}.`,
-    `Special detail: ${detail}.`,
-    `Visual style: ${style}.`,
-    "High quality, rich detail, clear composition, expressive lighting."
+    "צרו תמונה ידידותית לילדים לפי התיאור הבא.",
+    `הדמות הראשית: ${character}.`,
+    `המקום או הסביבה: ${place}.`,
+    `הפעולה שמתרחשת עכשיו: ${action}.`,
+    `הסגנון החזותי: ${style}.`,
+    `הפרט המיוחד: ${detail}.`,
+    "התמונה צריכה להיות איכותית, ברורה, צבעונית, עם קומפוזיציה מסודרת ואווירה חמה."
   ].join(" ");
-}
-
-function getStepTemplatePayload(steps) {
-  return {
-    character: steps.character,
-    place: steps.place,
-    action: steps.action,
-    style: steps.style,
-    detail: steps.detail
-  };
 }
 
 function buildSessionDraft(steps, validation) {
@@ -145,14 +105,10 @@ function buildSessionDraft(steps, validation) {
 }
 
 module.exports = {
-  buildDeterministicEnglishPrompt,
-  buildFallbackEnglishPrompt,
+  buildFinalHebrewPrompt,
   buildSessionDraft,
   buildValidationResponse,
-  containsHebrew,
-  getStepTemplatePayload,
   normalizeClassCode,
   sanitizePromptSteps,
-  sanitizeEnglishField,
   sanitizeStudentName
 };
