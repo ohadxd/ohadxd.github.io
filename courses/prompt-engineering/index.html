@@ -98,6 +98,7 @@
               <span class="seat-legend-item"><span class="seat-dot is-taken"></span>תפוס</span>
               <span class="seat-legend-item"><span class="seat-dot is-mine"></span>שלי</span>
             </div>
+            <div class="field-help">לוח המקומות מתעדכן לבד כל כמה שניות, כך שאפשר לראות מתי מקום נתפס או מתפנה.</div>
             <div id="seatBoard" class="seat-board" aria-live="polite"></div>
             <div class="action-row seat-status-row">
               <span id="selectedSeatBadge" class="pill">עדיין לא בחרתם מקום</span>
@@ -196,6 +197,10 @@
           <img id="imagePreview" alt="התמונה שנוצרה מהפרומפט" />
           <figcaption>התמונה נוצרת רק אחרי שכל השלבים מולאו ונבדקו.</figcaption>
         </figure>
+        <div class="action-row">
+          <a id="downloadImageButton" class="btn-primary" href="#" download="funlab-image.png" hidden>הורדת התמונה</a>
+          <span id="savedImageNote" class="field-help" hidden></span>
+        </div>
         <div class="prompt-output">
           <strong>הפרומפט הסופי שנשלח למודל:</strong>
           <pre id="finalPromptOutput"></pre>
@@ -212,6 +217,6 @@
     </footer>
   </div>
 
-  <script type="module" src="/js/prompt-lab.js"></script>
+  <script type="module" src="/js/prompt-lab.js?v=20260307-seat-reactive-1"></script>
 </body>
 </html>

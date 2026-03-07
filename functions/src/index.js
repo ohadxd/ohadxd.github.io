@@ -1,6 +1,7 @@
 "use strict";
 
 const admin = require("firebase-admin");
+const { randomUUID } = require("node:crypto");
 const { GoogleGenAI } = require("@google/genai");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
@@ -29,6 +30,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+const storage = admin.storage();
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 function getCallableOptions(extra = {}) {
@@ -295,6 +297,37 @@ async function generateImageWithGemini(ai, finalPrompt) {
   }
 
   throw new Error("Gemini image generation did not return image data.");
+}
+
+async function saveGeneratedImageToStorage(image, sessionData, sessionId, normalizedCode, usageId) {
+  const bucket = storage.bucket();
+  const fileExtension = image.mimeType === "image/jpeg" ? "jpg" : "png";
+  const filePath =
+    `generated-images/${normalizedCode}/seat-${String(sessionData.seatNumber || "00").padStart(2, "0")}/` +
+    `${usageId}.${fileExtension}`;
+  const downloadToken = randomUUID();
+  const imageBuffer = Buffer.from(image.imageBase64, "base64");
+  const file = bucket.file(filePath);
+
+  await file.save(imageBuffer, {
+    resumable: false,
+    contentType: image.mimeType,
+    metadata: {
+      cacheControl: "public,max-age=31536000,immutable",
+      metadata: {
+        firebaseStorageDownloadTokens: downloadToken,
+        classCode: normalizedCode,
+        sessionId: String(sessionId || "")
+      }
+    }
+  });
+
+  return {
+    imageStoragePath: filePath,
+    imageDownloadUrl:
+      `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
+      `${encodeURIComponent(filePath)}?alt=media&token=${downloadToken}`
+  };
 }
 
 exports.getSeatMap = onCall(getCallableOptions(), async (request) => {
@@ -594,6 +627,23 @@ exports.generateImage = onCall(
     }
 
     const usageRef = db.collection("generationUsage").doc();
+    let storedImage = {
+      imageStoragePath: "",
+      imageDownloadUrl: ""
+    };
+
+    try {
+      storedImage = await saveGeneratedImageToStorage(
+        image,
+        sessionData,
+        sessionRef.id,
+        normalizedCode,
+        usageRef.id
+      );
+    } catch (error) {
+      logger.error("Failed to save generated image to Firebase Storage", error);
+    }
+
     const newGenerationCount = generationsCount + 1;
 
     await sessionRef.set(
@@ -601,6 +651,8 @@ exports.generateImage = onCall(
         ...buildSessionDraft(steps, validation),
         generationsCount: FieldValue.increment(1),
         lastGeneratedAt: FieldValue.serverTimestamp(),
+        lastGeneratedImagePath: storedImage.imageStoragePath || "",
+        lastGeneratedImageUrl: storedImage.imageDownloadUrl || "",
         lastGeneratedPrompt: finalPromptEnglish,
         lastSeenAt: FieldValue.serverTimestamp(),
         status: "generated",
@@ -628,7 +680,9 @@ exports.generateImage = onCall(
       createdAt: FieldValue.serverTimestamp(),
       finalPromptEnglish,
       generationIndex: newGenerationCount,
+      imageDownloadUrl: storedImage.imageDownloadUrl || "",
       imageMimeType: image.mimeType,
+      imageStoragePath: storedImage.imageStoragePath || "",
       model: ACTIVITY_CONFIG.imageModel,
       sessionId: sessionRef.id,
       stepSnapshot: steps,
@@ -639,6 +693,8 @@ exports.generateImage = onCall(
       ok: true,
       didGenerate: true,
       imageDataUrl: `data:${image.mimeType};base64,${image.imageBase64}`,
+      imageDownloadUrl: storedImage.imageDownloadUrl || "",
+      imageStoragePath: storedImage.imageStoragePath || "",
       finalPromptEnglish,
       remainingGenerations: Math.max(generationLimit - newGenerationCount, 0),
       usageId: usageRef.id,

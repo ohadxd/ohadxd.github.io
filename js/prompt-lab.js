@@ -4,11 +4,12 @@ import {
   joinActivityCallable,
   restoreActivityCallable,
   validatePromptStepsCallable
-} from "/js/functions-client.js";
+} from "/js/functions-client.js?v=20260307-seat-reactive-1";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
 const AUTOSAVE_DELAY_MS = 1400;
+const SEAT_POLL_MS = 5000;
 
 const joinForm = document.getElementById("joinForm");
 const joinButton = document.getElementById("joinButton");
@@ -28,6 +29,8 @@ const selectedSeatBadge = document.getElementById("selectedSeatBadge");
 const seatStatusText = document.getElementById("seatStatusText");
 const seatBoard = document.getElementById("seatBoard");
 const imagePreview = document.getElementById("imagePreview");
+const downloadImageButton = document.getElementById("downloadImageButton");
+const savedImageNote = document.getElementById("savedImageNote");
 const finalPromptOutput = document.getElementById("finalPromptOutput");
 const classCodeInput = document.getElementById("classCode");
 const studentNameInput = document.getElementById("studentName");
@@ -50,7 +53,8 @@ const state = {
   selectedSeatNumber: 0,
   remainingGenerations: 0,
   seatMap: [],
-  autosaveTimer: null
+  autosaveTimer: null,
+  seatPollTimer: null
 };
 
 function normalizeClassCode(value) {
@@ -162,6 +166,10 @@ function enableActivity() {
 function resetResults() {
   resultCard.hidden = true;
   imagePreview.removeAttribute("src");
+  downloadImageButton.hidden = true;
+  downloadImageButton.removeAttribute("href");
+  savedImageNote.hidden = true;
+  savedImageNote.textContent = "";
   finalPromptOutput.textContent = "";
 }
 
@@ -233,6 +241,21 @@ function renderSeatBoard(seats = []) {
   }
 }
 
+function startSeatPolling() {
+  window.clearInterval(state.seatPollTimer);
+  state.seatPollTimer = window.setInterval(() => {
+    if (document.visibilityState !== "visible") {
+      return;
+    }
+
+    if (!normalizeClassCode(classCodeInput.value)) {
+      return;
+    }
+
+    void loadSeatMap();
+  }, SEAT_POLL_MS);
+}
+
 async function loadSeatMap({ showErrors = false } = {}) {
   const classCode = normalizeClassCode(classCodeInput.value);
 
@@ -252,6 +275,7 @@ async function loadSeatMap({ showErrors = false } = {}) {
     const response = await getSeatMapCallable({ classCode });
     const payload = response.data;
     const availableCount = payload.seats.filter((seat) => seat.status === "available").length;
+    const previouslySelectedSeat = state.selectedSeatNumber;
 
     state.classCode = payload.classCode;
 
@@ -266,6 +290,13 @@ async function loadSeatMap({ showErrors = false } = {}) {
     ) {
       state.selectedSeatNumber = 0;
       updateSeatBadge();
+      if (!state.sessionId && previouslySelectedSeat) {
+        showStatus(
+          "warn",
+          "המקום נתפס בינתיים",
+          `מקום ${previouslySelectedSeat} כבר לא פנוי. בחרו מקום אחר בלוח.`
+        );
+      }
     }
 
     renderSeatBoard(payload.seats);
@@ -485,6 +516,16 @@ generateButton.addEventListener("click", async () => {
 
     updateRemainingBadge(payload.remainingGenerations);
     imagePreview.src = payload.imageDataUrl;
+    downloadImageButton.href = payload.imageDownloadUrl || payload.imageDataUrl;
+    downloadImageButton.download = `funlab-seat-${state.seatNumber || "00"}-${Date.now()}.png`;
+    downloadImageButton.hidden = false;
+    if (payload.imageStoragePath) {
+      savedImageNote.textContent = `התמונה נשמרה גם בשרת: ${payload.imageStoragePath}`;
+      savedImageNote.hidden = false;
+    } else {
+      savedImageNote.textContent = "התמונה זמינה כרגע להורדה מהעמוד הזה. שמירה קבועה בשרת תופעל אחרי חיבור Firebase Storage.";
+      savedImageNote.hidden = false;
+    }
     finalPromptOutput.textContent = payload.finalPromptEnglish;
     resultCard.hidden = false;
     persistDraftState();
@@ -555,6 +596,13 @@ refreshSeatsButton.addEventListener("click", () => {
   void loadSeatMap({ showErrors: true });
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    void loadSeatMap();
+  }
+});
+
 updateSeatBadge();
 updateRemainingBadge(0);
+startSeatPolling();
 void restoreSavedSession();
