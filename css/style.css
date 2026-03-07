@@ -1130,3 +1130,9 @@ figure,
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   line-height: 1.6;
 }
+
+#finalPromptOutput{
+  direction: rtl;
+  text-align: right;
+  font-family: inherit;
+}

@@ -72,6 +72,16 @@ function collectSteps() {
   }, {});
 }
 
+function buildHebrewPromptPreview(steps) {
+  return [
+    `דמות ראשית: ${steps.character || "-"}`,
+    `מקום או סביבה: ${steps.place || "-"}`,
+    `מה קורה בתמונה: ${steps.action || "-"}`,
+    `סגנון חזותי: ${steps.style || "-"}`,
+    `פרט מיוחד: ${steps.detail || "-"}`
+  ].join("\n");
+}
+
 function fillSteps(steps = emptySteps) {
   for (const input of stepInputs) {
     input.value = steps[input.dataset.stepKey] || "";
@@ -498,9 +508,10 @@ generateButton.addEventListener("click", async () => {
   setButtonState(generateButton, true, "יצירת תמונה", "יוצר...");
 
   try {
+    const currentSteps = collectSteps();
     const response = await generateImageCallable({
       sessionId: state.sessionId,
-      steps: collectSteps()
+      steps: currentSteps
     });
     const payload = response.data;
 
@@ -526,7 +537,7 @@ generateButton.addEventListener("click", async () => {
       savedImageNote.textContent = "התמונה זמינה כרגע להורדה מהעמוד הזה. שמירה קבועה בשרת תופעל אחרי חיבור Firebase Storage.";
       savedImageNote.hidden = false;
     }
-    finalPromptOutput.textContent = payload.finalPromptEnglish;
+    finalPromptOutput.textContent = buildHebrewPromptPreview(currentSteps);
     resultCard.hidden = false;
     persistDraftState();
     showStatus("good", "התמונה מוכנה", payload.message);
