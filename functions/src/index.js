@@ -8,14 +8,18 @@ const { HttpsError, onCall } = require("firebase-functions/v2/https");
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
 const {
   ACTIVITY_CONFIG,
-  ENGLISH_PROMPT_SYSTEM_INSTRUCTION
+  ENGLISH_STEP_TRANSLATION_SCHEMA,
+  ENGLISH_STEP_TRANSLATION_INSTRUCTION
 } = require("./config/agentConfig");
 const {
+  buildDeterministicEnglishPrompt,
   buildFallbackEnglishPrompt,
   buildSessionDraft,
   buildValidationResponse,
+  containsHebrew,
   getStepTemplatePayload,
   normalizeClassCode,
+  sanitizeEnglishField,
   sanitizePromptSteps,
   sanitizeStudentName
 } = require("./lib/promptFlow");
@@ -40,6 +44,27 @@ function normalizeSecretValue(value) {
   }
 
   return value.replace(/^\uFEFF/, "").trim();
+}
+
+function parseLooseJsonObject(text) {
+  if (typeof text !== "string") {
+    return null;
+  }
+
+  const trimmed = text.trim();
+
+  try {
+    return JSON.parse(trimmed);
+  } catch (error) {
+    const startIndex = trimmed.indexOf("{");
+    const endIndex = trimmed.lastIndexOf("}");
+
+    if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+      return null;
+    }
+
+    return JSON.parse(trimmed.slice(startIndex, endIndex + 1));
+  }
 }
 
 function assertStringValue(value, code, message) {
@@ -111,39 +136,70 @@ function getGenerationLimit(classData) {
 
 async function buildFinalEnglishPrompt(ai, steps) {
   const payload = JSON.stringify(getStepTemplatePayload(steps), null, 2);
+  const translationPrompt =
+    "Translate these validated Hebrew image-building steps into English JSON with the same five fields:\n" +
+    payload;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: ACTIVITY_CONFIG.textModel,
-      config: {
-        temperature: 0.2,
-        maxOutputTokens: 180,
-        systemInstruction: ENGLISH_PROMPT_SYSTEM_INSTRUCTION
-      },
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text:
-                "Turn these validated Hebrew image-building steps into one English prompt:\n" +
-                payload
-            }
-          ]
-        }
-      ]
-    });
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await ai.models.generateContent({
+        model: ACTIVITY_CONFIG.textModel,
+        config: {
+          temperature: 0,
+          maxOutputTokens: 300,
+          thinkingConfig: {
+            thinkingBudget: 0
+          },
+          responseMimeType: "application/json",
+          responseJsonSchema: ENGLISH_STEP_TRANSLATION_SCHEMA,
+          systemInstruction: ENGLISH_STEP_TRANSLATION_INSTRUCTION
+        },
+        contents: translationPrompt
+      });
 
-    const finalPrompt = (response.text || "").replace(/\s+/g, " ").trim();
+      const translated = parseLooseJsonObject(response.text || "");
 
-    if (finalPrompt) {
-      return finalPrompt;
+      if (!translated) {
+        throw new Error("Gemini did not return parsable JSON for step translation.");
+      }
+
+      const translatedSteps = {
+        character: sanitizeEnglishField(translated.character, ""),
+        place: sanitizeEnglishField(translated.place, ""),
+        action: sanitizeEnglishField(translated.action, ""),
+        style: sanitizeEnglishField(translated.style, ""),
+        detail: sanitizeEnglishField(translated.detail, "")
+      };
+
+      const hasAllFields = Object.values(translatedSteps).every(Boolean);
+      const hasHebrewLeak = Object.values(translatedSteps).some((value) =>
+        containsHebrew(value)
+      );
+
+      if (hasAllFields && !hasHebrewLeak) {
+        return buildDeterministicEnglishPrompt(translatedSteps);
+      }
+
+      throw new Error("Translated prompt fields were incomplete or still contained Hebrew.");
+    } catch (error) {
+      logger.error("Failed to translate prompt steps with Gemini text model", {
+        attempt,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
-  } catch (error) {
-    logger.error("Failed to build final English prompt with Gemini text model", error);
   }
 
-  return buildFallbackEnglishPrompt(steps);
+  if (Object.values(steps).some((value) => containsHebrew(value))) {
+    throw new Error("Could not build a clean English prompt from the Hebrew steps.");
+  }
+
+  return buildDeterministicEnglishPrompt({
+    character: sanitizeEnglishField(steps.character, steps.character),
+    place: sanitizeEnglishField(steps.place, steps.place),
+    action: sanitizeEnglishField(steps.action, steps.action),
+    style: sanitizeEnglishField(steps.style, steps.style),
+    detail: sanitizeEnglishField(steps.detail, steps.detail)
+  }) || buildFallbackEnglishPrompt(steps);
 }
 
 async function generateImageWithGemini(ai, finalPrompt) {
@@ -306,8 +362,20 @@ exports.generateImage = onCall(
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const finalPromptEnglish = await buildFinalEnglishPrompt(ai, steps);
-    const image = await generateImageWithGemini(ai, finalPromptEnglish);
+    let finalPromptEnglish;
+    let image;
+
+    try {
+      finalPromptEnglish = await buildFinalEnglishPrompt(ai, steps);
+      image = await generateImageWithGemini(ai, finalPromptEnglish);
+    } catch (error) {
+      logger.error("Failed to generate an image from validated prompt steps", error);
+      throw new HttpsError(
+        "internal",
+        "לא הצלחתי להכין פרומפט תקין לתמונה. נסו שוב בעוד רגע."
+      );
+    }
+
     const usageRef = db.collection("generationUsage").doc();
     const newGenerationCount = generationsCount + 1;
 

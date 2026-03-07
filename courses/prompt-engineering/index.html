@@ -80,11 +80,13 @@
         <form id="joinForm" class="form-grid">
           <div class="field">
             <label for="classCode">קוד כיתה</label>
-            <input id="classCode" class="input" type="text" inputmode="text" autocomplete="off" placeholder="למשל: FUNLAB100" required />
+            <input id="classCode" class="input" type="text" inputmode="text" autocomplete="off" placeholder="הקלידו כאן את הקוד שקיבלתם מהמורה" required />
+            <div class="field-help">הקוד ניתן על ידי המורה. לא מציגים כאן קוד דוגמה אמיתי.</div>
           </div>
           <div class="field">
             <label for="studentName">שם תלמיד או תלמידה</label>
             <input id="studentName" class="input" type="text" autocomplete="name" placeholder="למשל: נועם" />
+            <div class="field-help">אפשר לכתוב שם פרטי בלבד.</div>
           </div>
           <div class="action-row">
             <button id="joinButton" class="btn-primary" type="submit">כניסה לפעילות</button>
@@ -100,22 +102,77 @@
           <div class="field">
             <label for="stepCharacter">1. דמות ראשית</label>
             <textarea id="stepCharacter" class="textarea" data-step-key="character" placeholder="למשל: רובוט קטן וחברותי"></textarea>
+            <div class="field-help">דוגמאות לדמות: רובוט קטן, ילדה אמיצה, חתול קוסם, דרקון מצחיק, אסטרונאוט סקרן, פיה זוהרת, ילד חוקר, צב מעופף, בלשית צעירה, חד-קרן שמח.</div>
+            <div class="example-grid" aria-label="דוגמאות לדמות ראשית">
+              <span class="example-chip">רובוט קטן</span>
+              <span class="example-chip">ילדה אמיצה</span>
+              <span class="example-chip">חתול קוסם</span>
+              <span class="example-chip">דרקון מצחיק</span>
+              <span class="example-chip">אסטרונאוט סקרן</span>
+              <span class="example-chip">חד-קרן שמח</span>
+            </div>
           </div>
           <div class="field">
             <label for="stepPlace">2. מקום / סביבה</label>
             <textarea id="stepPlace" class="textarea" data-step-key="place" placeholder="למשל: גן משחקים עתידני"></textarea>
+            <div class="field-help">דוגמאות למקום: יער קסום, גן עתידני, טירה בעננים, חוף ים נוצץ, ספרייה ענקית, חללית צבעונית, מעבדה סודית, כפר קטן בשלג, עיר מתחת למים, בית ספר על הירח.</div>
+            <div class="example-grid" aria-label="דוגמאות למקום או סביבה">
+              <span class="example-chip">יער קסום</span>
+              <span class="example-chip">טירה בעננים</span>
+              <span class="example-chip">חוף ים נוצץ</span>
+              <span class="example-chip">עיר מתחת למים</span>
+              <span class="example-chip">חללית צבעונית</span>
+              <span class="example-chip">בית ספר על הירח</span>
+            </div>
           </div>
           <div class="field">
             <label for="stepAction">3. פעולה</label>
             <textarea id="stepAction" class="textarea" data-step-key="action" placeholder="למשל: אוסף עפיפון שנפל"></textarea>
+            <div class="field-help">דוגמאות לפעולה: רץ מהר, קופץ מעל שלולית, עוזר לחבר, מגלה אוצר, מצייר קשת, מטיס עפיפון, קורא מפה סודית, בונה מכונה, מציל פרפר, מחזיר בלון לילד.</div>
+            <div class="example-grid" aria-label="דוגמאות לפעולה">
+              <span class="example-chip">מגלה אוצר</span>
+              <span class="example-chip">עוזר לחבר</span>
+              <span class="example-chip">בונה מכונה</span>
+              <span class="example-chip">מטיס עפיפון</span>
+              <span class="example-chip">מצייר קשת</span>
+              <span class="example-chip">מחזיר בלון לילד</span>
+            </div>
           </div>
           <div class="field">
             <label for="stepStyle">4. סגנון חזותי</label>
             <textarea id="stepStyle" class="textarea" data-step-key="style" placeholder="למשל: איור ספר ילדים צבעוני"></textarea>
+            <div class="field-help">דוגמאות לסגנון ואיכות: איור ספר ילדים, קומיקס צבעוני, ריאליסטי, תלת־ממד רך, צבעי מים, פיקסל ארט, פלסטלינה, מדבקה חמודה, חד ומפורט, תאורה רכה, צבעים חזקים, קווים נקיים, מראה חלומי, מראה קולנועי, רקע עשיר, איכות גבוהה מאוד.</div>
+            <div class="example-grid" aria-label="דוגמאות לסגנון חזותי">
+              <span class="example-chip">איור ספר ילדים</span>
+              <span class="example-chip">קומיקס צבעוני</span>
+              <span class="example-chip">ריאליסטי</span>
+              <span class="example-chip">תלת־ממד רך</span>
+              <span class="example-chip">צבעי מים</span>
+              <span class="example-chip">פיקסל ארט</span>
+              <span class="example-chip">פלסטלינה</span>
+              <span class="example-chip">מדבקה חמודה</span>
+              <span class="example-chip">חד ומפורט</span>
+              <span class="example-chip">תאורה רכה</span>
+              <span class="example-chip">צבעים חזקים</span>
+              <span class="example-chip">קווים נקיים</span>
+              <span class="example-chip">מראה חלומי</span>
+              <span class="example-chip">מראה קולנועי</span>
+              <span class="example-chip">רקע עשיר</span>
+              <span class="example-chip">איכות גבוהה מאוד</span>
+            </div>
           </div>
           <div class="field field-full">
             <label for="stepDetail">5. פרט מיוחד</label>
             <textarea id="stepDetail" class="textarea" data-step-key="detail" placeholder="למשל: תרמיל עם כוכבים זוהרים"></textarea>
+            <div class="field-help">דוגמאות לפרט מיוחד: כובע עם כוכבים, נעליים זוהרות, בלון בצורת לב, משקפיים מצחיקים, פרח ענק, שביל של ניצוצות, תיק עם טלאי ירח, גלימה מנצנצת, שעון קסום, סיכה בצורת ברק.</div>
+            <div class="example-grid" aria-label="דוגמאות לפרט מיוחד">
+              <span class="example-chip">כובע עם כוכבים</span>
+              <span class="example-chip">בלון בצורת לב</span>
+              <span class="example-chip">גלימה מנצנצת</span>
+              <span class="example-chip">שעון קסום</span>
+              <span class="example-chip">שביל של ניצוצות</span>
+              <span class="example-chip">סיכה בצורת ברק</span>
+            </div>
           </div>
         </div>
 

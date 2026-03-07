@@ -836,6 +836,12 @@ figure,
   font-weight: 800;
 }
 
+.field-help{
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .field-full{
   grid-column: 1 / -1;
 }
@@ -935,6 +941,24 @@ figure,
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.example-grid{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.example-chip{
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #edf6ff;
+  border: 1px solid #cfe3f7;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .result-figure img{

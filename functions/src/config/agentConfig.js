@@ -69,21 +69,34 @@ const ACTIVITY_CONFIG = {
     "דברו בעברית פשוטה, קצרה ומעודדת שמתאימה לתלמידי כיתות ה-ו."
 };
 
-const ENGLISH_PROMPT_SYSTEM_INSTRUCTION = [
-  "You build image prompts for children in a tightly controlled educational activity.",
-  "Input arrives as validated Hebrew step values.",
-  "Return exactly one clean English image prompt for an image model.",
-  "Do not ask questions.",
-  "Do not explain your reasoning.",
-  "Do not add safety policy text.",
-  "Keep the prompt visually rich, child-friendly, and faithful to the five supplied steps.",
-  "Mention all five parts: character, place, action, visual style, special detail.",
-  "Output only the final English prompt."
+const ENGLISH_STEP_TRANSLATION_INSTRUCTION = [
+  "You translate validated Hebrew image-building fields into short natural English phrases.",
+  "Translate faithfully from Hebrew to English.",
+  "Return strict JSON only.",
+  "Keep each value concise and faithful to the source.",
+  "Do not merge fields together.",
+  "Do not add extra ideas.",
+  "Do not leave any Hebrew words in the response.",
+  "Keys must be exactly: character, place, action, style, detail."
 ].join(" ");
+
+const ENGLISH_STEP_TRANSLATION_SCHEMA = {
+  type: "object",
+  properties: {
+    character: { type: "string" },
+    place: { type: "string" },
+    action: { type: "string" },
+    style: { type: "string" },
+    detail: { type: "string" }
+  },
+  required: ["character", "place", "action", "style", "detail"],
+  additionalProperties: false
+};
 
 module.exports = {
   ACTIVITY_CONFIG,
-  ENGLISH_PROMPT_SYSTEM_INSTRUCTION,
+  ENGLISH_STEP_TRANSLATION_SCHEMA,
+  ENGLISH_STEP_TRANSLATION_INSTRUCTION,
   REQUIRED_STEPS,
   REQUIRED_STEP_KEYS
 };

@@ -73,13 +73,55 @@ function buildValidationResponse(steps) {
 }
 
 function buildFallbackEnglishPrompt(steps) {
+  return buildDeterministicEnglishPrompt(steps);
+}
+
+function sanitizeEnglishField(value, fallback) {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const normalized = value
+    .replace(/[`"']/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return normalized || fallback;
+}
+
+function containsHebrew(value) {
+  return /[\u0590-\u05FF]/.test(value || "");
+}
+
+function normalizePromptClause(value) {
+  const normalized = sanitizeEnglishField(value, "");
+
+  if (!normalized) {
+    return "";
+  }
+
+  if (/^[A-Z]/.test(normalized)) {
+    return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+  }
+
+  return normalized;
+}
+
+function buildDeterministicEnglishPrompt(steps) {
+  const character = normalizePromptClause(steps.character);
+  const place = normalizePromptClause(steps.place);
+  const action = normalizePromptClause(steps.action);
+  const detail = normalizePromptClause(steps.detail);
+  const style = normalizePromptClause(steps.style);
+
   return [
-    `A child-friendly ${steps.style} illustration of ${steps.character}`,
-    `in ${steps.place}`,
-    `${steps.action}`,
-    `with ${steps.detail}`,
-    "high detail, warm lighting, clear composition, suitable for children"
-  ].join(", ");
+    `Create a child-friendly image of ${character}.`,
+    `Setting: ${place}.`,
+    `Action: ${action}.`,
+    `Special detail: ${detail}.`,
+    `Visual style: ${style}.`,
+    "High quality, rich detail, clear composition, expressive lighting."
+  ].join(" ");
 }
 
 function getStepTemplatePayload(steps) {
@@ -87,8 +129,8 @@ function getStepTemplatePayload(steps) {
     character: steps.character,
     place: steps.place,
     action: steps.action,
-    visualStyle: steps.style,
-    specialDetail: steps.detail
+    style: steps.style,
+    detail: steps.detail
   };
 }
 
@@ -103,11 +145,14 @@ function buildSessionDraft(steps, validation) {
 }
 
 module.exports = {
+  buildDeterministicEnglishPrompt,
   buildFallbackEnglishPrompt,
   buildSessionDraft,
   buildValidationResponse,
+  containsHebrew,
   getStepTemplatePayload,
   normalizeClassCode,
   sanitizePromptSteps,
+  sanitizeEnglishField,
   sanitizeStudentName
 };
