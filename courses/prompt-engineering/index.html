@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Funlab | מעבדת פרומפטים לילדים</title>
+  <meta name="description" content="פעילות AI חינוכית בעברית לתלמידי כיתות ה-ו: בניית פרומפט לתמונה צעד אחרי צעד עם בדיקה חכמה ויצירת תמונה רק בסיום כל השלבים." />
+  <meta name="keywords" content="Funlab, AI לילדים, פרומפטים לילדים, קורס AI בעברית, יצירת תמונות לילדים, הנדסת פרומפטים" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta property="og:locale" content="he_IL" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Funlab" />
+  <meta property="og:title" content="Funlab | מעבדת פרומפטים לילדים" />
+  <meta property="og:description" content="בונים פרומפט לתמונה ב-5 שלבים קבועים ורק אז יוצרים תמונה." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="/courses/prompt-engineering/" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": "מעבדת פרומפטים לילדים",
+    "inLanguage": "he-IL",
+    "provider": {
+      "@type": "Organization",
+      "name": "Funlab",
+      "alternateName": ["funlab", "פאנלאב", "פנלב", "פן לב"]
+    },
+    "about": "Prompt Engineering for Children"
+  }
+  </script>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="site-nav" aria-label="ניווט עליון">
+      <a href="/">בית</a>
+      <a href="/courses/">קורסים</a>
+      <a href="/courses/prompt-engineering/">מעבדת פרומפטים</a>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="title">
+          <div class="badge"><span class="dot"></span> AI חינוכי לכיתות ה-ו</div>
+          <h1>מעבדת פרומפטים</h1>
+          <p class="subtitle">כאן לא מבקשים סתם תמונה. בונים רעיון טוב ב-5 שלבים, בודקים מה חסר, ורק אז יוצרים.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="k">שלבים קבועים</div>
+            <div class="v">5 צעדים</div>
+          </div>
+          <div class="stat">
+            <div class="k">שפת ההסבר</div>
+            <div class="v">עברית פשוטה</div>
+          </div>
+          <div class="stat">
+            <div class="k">יצירת תמונה</div>
+            <div class="v">רק אחרי השלמה</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid single-col">
+      <section class="card">
+        <h2><span class="icon">🧠</span> איך הפעילות עובדת</h2>
+        <div class="quick-items">
+          <div class="quick-item">1. בוחרים דמות ראשית.</div>
+          <div class="quick-item">2. מוסיפים מקום או סביבה.</div>
+          <div class="quick-item">3. כותבים מה הדמות עושה.</div>
+          <div class="quick-item">4. בוחרים סגנון חזותי.</div>
+          <div class="quick-item">5. מוסיפים פרט מיוחד קטן ומעניין.</div>
+        </div>
+        <p class="kid-note">המערכת לא מאפשרת בקשה חופשית לתמונה. היא בודקת שיש כל השלבים ורק אז יוצרת.</p>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">🔑</span> כניסה לכיתה</h2>
+        <form id="joinForm" class="form-grid">
+          <div class="field">
+            <label for="classCode">קוד כיתה</label>
+            <input id="classCode" class="input" type="text" inputmode="text" autocomplete="off" placeholder="למשל: FUNLAB100" required />
+          </div>
+          <div class="field">
+            <label for="studentName">שם תלמיד או תלמידה</label>
+            <input id="studentName" class="input" type="text" autocomplete="name" placeholder="למשל: נועם" />
+          </div>
+          <div class="action-row">
+            <button id="joinButton" class="btn-primary" type="submit">כניסה לפעילות</button>
+            <span id="sessionBadge" class="pill">עדיין לא התחברתם</span>
+            <span id="remainingBadge" class="pill">נשארו 0 יצירות</span>
+          </div>
+        </form>
+      </section>
+
+      <section id="activityCard" class="card" hidden>
+        <h2><span class="icon">🧩</span> בונים את הפרומפט</h2>
+        <div class="builder-grid">
+          <div class="field">
+            <label for="stepCharacter">1. דמות ראשית</label>
+            <textarea id="stepCharacter" class="textarea" data-step-key="character" placeholder="למשל: רובוט קטן וחברותי"></textarea>
+          </div>
+          <div class="field">
+            <label for="stepPlace">2. מקום / סביבה</label>
+            <textarea id="stepPlace" class="textarea" data-step-key="place" placeholder="למשל: גן משחקים עתידני"></textarea>
+          </div>
+          <div class="field">
+            <label for="stepAction">3. פעולה</label>
+            <textarea id="stepAction" class="textarea" data-step-key="action" placeholder="למשל: אוסף עפיפון שנפל"></textarea>
+          </div>
+          <div class="field">
+            <label for="stepStyle">4. סגנון חזותי</label>
+            <textarea id="stepStyle" class="textarea" data-step-key="style" placeholder="למשל: איור ספר ילדים צבעוני"></textarea>
+          </div>
+          <div class="field field-full">
+            <label for="stepDetail">5. פרט מיוחד</label>
+            <textarea id="stepDetail" class="textarea" data-step-key="detail" placeholder="למשל: תרמיל עם כוכבים זוהרים"></textarea>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button id="validateButton" class="btn-secondary" type="button" disabled>בדיקת שלבים</button>
+          <button id="generateButton" class="btn-primary" type="button" disabled>יצירת תמונה</button>
+          <button id="clearButton" class="btn-ghost" type="button">ניקוי</button>
+        </div>
+
+        <div id="statusBox" class="callout warn" hidden>
+          <div class="row">
+            <div class="badge2">i</div>
+            <div class="status-copy">
+              <strong id="statusTitle">מוכנים להתחיל</strong>
+              <div id="statusText">מלאו את כל חמשת השלבים.</div>
+              <div id="missingList" class="status-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="resultCard" class="card" hidden>
+        <h2><span class="icon">🖼️</span> התוצאה</h2>
+        <figure class="result-figure">
+          <img id="imagePreview" alt="התמונה שנוצרה מהפרומפט" />
+          <figcaption>התמונה נוצרת רק אחרי שכל השלבים מולאו ונבדקו.</figcaption>
+        </figure>
+        <div class="prompt-output">
+          <strong>הפרומפט הסופי שנשלח למודל:</strong>
+          <pre id="finalPromptOutput"></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="small">Funlab | פאנלאב | פנלב | פן לב</div>
+      <div class="back-links">
+        <a href="/courses/">חזרה לקורסים</a>
+        <a href="/">חזרה לבית</a>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="/js/prompt-lab.js"></script>
+</body>
+</html>
