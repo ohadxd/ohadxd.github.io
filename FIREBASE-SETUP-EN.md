@@ -21,7 +21,7 @@ Recommended fields:
 - `label`: short class label, for example `Grade 5A`
 - `isActive`: `true`
 - `activitySlug`: `ai-prompt-lab`
-- `allowedGenerationsPerStudent`: `3`
+- `allowedGenerationsPerStudent`: `6`
 - `teacherName`: for example `Ohad`
 - `expiresAt`: optional timestamp
 - `participantsCount`: optional number, auto-updated
@@ -110,7 +110,7 @@ Then open:
    - `label`: `Grade 5A`
    - `isActive`: `true`
    - `activitySlug`: `ai-prompt-lab`
-   - `allowedGenerationsPerStudent`: `3`
+   - `allowedGenerationsPerStudent`: `6`
 3. Open the activity page locally.
 4. Enter class code `FUNLAB100`.
 5. Enter a student name.
@@ -125,9 +125,25 @@ Then open:
 9. Click `יצירת תמונה`.
 10. Confirm that:
    - an image is returned
-   - the final English prompt is shown
+   - the final Hebrew prompt summary is shown
    - a usage record is created in `generationUsage`
    - the remaining generation count goes down
+
+## Ready class codes
+
+These 5 active class codes were created in the project:
+
+- `FUNLAB100`
+- `FUNLAB200`
+- `FUNLAB300`
+- `FUNLAB400`
+- `FUNLAB500`
+
+Each one is configured with:
+
+- `25` seats
+- `6` image generations per seat
+- `activitySlug = ai-prompt-lab`
 
 ## Deploy commands
 

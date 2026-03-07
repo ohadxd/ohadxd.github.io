@@ -21,7 +21,7 @@
 - `label`: שם קצר לכיתה, למשל `כיתה ה1`
 - `isActive`: ערך `true`
 - `activitySlug`: הערך `ai-prompt-lab`
-- `allowedGenerationsPerStudent`: למשל `3`
+- `allowedGenerationsPerStudent`: למשל `6`
 - `teacherName`: למשל `אוהד`
 - `expiresAt`: שדה תאריך אופציונלי
 - `participantsCount`: מספר אופציונלי, מתעדכן אוטומטית
@@ -55,7 +55,7 @@
 - `sessionId`
 - `classCode`
 - `studentName`
-- `finalPromptEnglish`
+- `finalPromptHebrew`
 - `stepSnapshot`
 - `generationIndex`
 - `model`
@@ -119,3 +119,19 @@ npx firebase-tools deploy --only functions,firestore
 5. להשלים את כל חמשת השלבים.
 6. ללחוץ על "יצירת תמונה".
 7. לוודא שמתקבלת תמונה ושנשמר רישום ב-`generationUsage`.
+
+## קודי כיתה מוכנים
+
+נוצרו בפרויקט גם 5 קודים פעילים מוכנים לשימוש:
+
+- `FUNLAB100`
+- `FUNLAB200`
+- `FUNLAB300`
+- `FUNLAB400`
+- `FUNLAB500`
+
+לכל אחד מהם:
+
+- `25` מקומות
+- `6` יצירות לכל מקום
+- `activitySlug = ai-prompt-lab`

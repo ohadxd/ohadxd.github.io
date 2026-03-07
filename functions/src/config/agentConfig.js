@@ -54,7 +54,7 @@ const ACTIVITY_CONFIG = {
     projectId: "groovetech-9a3fb",
     storageBucket: "groovetech-9a3fb.firebasestorage.app"
   },
-  defaultGenerationsPerStudent: 3,
+  defaultGenerationsPerStudent: 6,
   defaultSeatCount: 25,
   seatClaimMinutes: 120,
   maxStepLength: 160,
