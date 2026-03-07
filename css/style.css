@@ -962,6 +962,8 @@ figure,
   color: var(--text);
   padding: 12px 14px;
   font: inherit;
+  direction: rtl;
+  text-align: right;
   box-shadow: inset 0 1px 2px rgba(17, 24, 39, 0.04);
 }
 
@@ -1123,6 +1125,8 @@ figure,
   border-radius: 14px;
   padding: 12px 14px;
   color: var(--text);
+  direction: ltr;
+  text-align: left;
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   line-height: 1.6;
 }
