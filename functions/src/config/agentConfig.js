@@ -45,6 +45,15 @@ const ACTIVITY_CONFIG = {
   activityTitle: "מעבדת פרומפטים",
   region: "europe-west1",
   imageModel: "gemini-2.5-flash-image",
+  firebaseWebApp: {
+    appId: "1:56393078768:web:0f6c29d78a6dcdb4516f35",
+    authDomain: "groovetech-9a3fb.firebaseapp.com",
+    databaseURL: "https://groovetech-9a3fb-default-rtdb.europe-west1.firebasedatabase.app",
+    measurementId: "G-8VF8CVG3L0",
+    messagingSenderId: "56393078768",
+    projectId: "groovetech-9a3fb",
+    storageBucket: "groovetech-9a3fb.firebasestorage.app"
+  },
   defaultGenerationsPerStudent: 3,
   defaultSeatCount: 25,
   seatClaimMinutes: 120,

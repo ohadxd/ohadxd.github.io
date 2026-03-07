@@ -1,5 +1,16 @@
+import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import {
+  connectFirestoreEmulator,
+  doc,
+  getFirestore,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
 const EMULATOR_ORIGIN = "http://127.0.0.1:5001/groovetech-9a3fb/europe-west1";
 const PRODUCTION_ORIGIN = "https://europe-west1-groovetech-9a3fb.cloudfunctions.net";
+let firebaseClientConfig = null;
+let firestoreDb = null;
+let firestoreEmulatorConnected = false;
 
 function getFunctionsOrigin() {
   if (
@@ -32,6 +43,59 @@ async function callFunction(functionName, data) {
   return {
     data: payload.result
   };
+}
+
+function getFirestoreDb() {
+  if (!firebaseClientConfig?.apiKey) {
+    throw new Error("Realtime Firebase config is not available.");
+  }
+
+  if (!firestoreDb) {
+    const app = getApps().length
+      ? getApps()[0]
+      : initializeApp(firebaseClientConfig, "prompt-lab-realtime");
+    firestoreDb = getFirestore(app);
+
+    if (
+      !firestoreEmulatorConnected &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    ) {
+      connectFirestoreEmulator(firestoreDb, "127.0.0.1", 8080);
+      firestoreEmulatorConnected = true;
+    }
+  }
+
+  return firestoreDb;
+}
+
+export function setRealtimeClientConfig(config) {
+  if (!config?.apiKey) {
+    return;
+  }
+
+  if (!firebaseClientConfig) {
+    firebaseClientConfig = config;
+  }
+}
+
+export function subscribeSeatMap(publicSeatMapId, handlers) {
+  const db = getFirestoreDb();
+  const seatMapRef = doc(db, "publicSeatMaps", publicSeatMapId);
+
+  return onSnapshot(
+    seatMapRef,
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        handlers?.onError?.(new Error("לוח המקומות עדיין לא זמין."));
+        return;
+      }
+
+      handlers?.onData?.(snapshot.data());
+    },
+    (error) => {
+      handlers?.onError?.(error);
+    }
+  );
 }
 
 export function joinActivityCallable(data) {

@@ -4,13 +4,15 @@ import {
   joinActivityCallable,
   leaveActivityCallable,
   restoreActivityCallable,
+  setRealtimeClientConfig,
+  subscribeSeatMap,
   validatePromptStepsCallable
-} from "/js/functions-client.js?v=20260307-seat-ui-2";
+} from "/js/functions-client.js?v=20260308-seat-realtime-1";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
 const AUTOSAVE_DELAY_MS = 1400;
-const SEAT_POLL_MS = 15000;
+const SEAT_POLL_MS = 30000;
 
 const joinForm = document.getElementById("joinForm");
 const joinButton = document.getElementById("joinButton");
@@ -56,7 +58,9 @@ const state = {
   remainingGenerations: 0,
   seatMap: [],
   autosaveTimer: null,
-  seatPollTimer: null
+  seatPollTimer: null,
+  publicSeatMapId: "",
+  seatRealtimeUnsubscribe: null
 };
 
 function normalizeClassCode(value) {
@@ -210,6 +214,14 @@ function setJoinLocked(isLocked) {
   updateJoinButtonAvailability();
 }
 
+function stopSeatRealtime() {
+  if (typeof state.seatRealtimeUnsubscribe === "function") {
+    state.seatRealtimeUnsubscribe();
+  }
+
+  state.seatRealtimeUnsubscribe = null;
+}
+
 function renderSeatBoard(seats = []) {
   state.seatMap = seats;
   seatBoard.innerHTML = "";
@@ -255,6 +267,10 @@ function renderSeatBoard(seats = []) {
 }
 
 function startSeatPolling() {
+  if (state.seatRealtimeUnsubscribe) {
+    return;
+  }
+
   window.clearInterval(state.seatPollTimer);
   state.seatPollTimer = window.setInterval(() => {
     if (document.visibilityState !== "visible") {
@@ -278,13 +294,77 @@ function stopSeatPolling() {
   state.seatPollTimer = null;
 }
 
+function applySeatMapPayload(payload, { fromRealtime = false } = {}) {
+  const seats = Array.isArray(payload?.seats) ? payload.seats : [];
+  const availableCount = seats.filter((seat) => seat.status === "available").length;
+  const previouslySelectedSeat = state.selectedSeatNumber;
+
+  if (payload?.classCode) {
+    state.classCode = payload.classCode;
+  }
+
+  if (
+    state.selectedSeatNumber &&
+    seats.some(
+      (seat) =>
+        seat.seatNumber === state.selectedSeatNumber &&
+        seat.status === "taken" &&
+        !(state.sessionId && state.seatNumber === state.selectedSeatNumber)
+    )
+  ) {
+    state.selectedSeatNumber = 0;
+    updateSeatBadge();
+    if (!state.sessionId && previouslySelectedSeat) {
+      showStatus(
+        "warn",
+        "המקום נתפס בינתיים",
+        `מקום ${previouslySelectedSeat} כבר לא פנוי. בחרו מקום אחר בלוח.`
+      );
+    }
+  }
+
+  renderSeatBoard(seats);
+  seatStatusText.textContent = fromRealtime
+    ? `הלוח מתעדכן בזמן אמת. יש כרגע ${availableCount} מקומות פנויים.`
+    : `יש כרגע ${availableCount} מקומות פנויים.`;
+  updateJoinButtonAvailability();
+}
+
+function ensureSeatRealtime(payload) {
+  if (!payload?.publicSeatMapId || !payload?.firebaseConfig?.apiKey) {
+    startSeatPolling();
+    return;
+  }
+
+  state.publicSeatMapId = payload.publicSeatMapId;
+  setRealtimeClientConfig(payload.firebaseConfig);
+
+  if (state.seatRealtimeUnsubscribe) {
+    return;
+  }
+
+  state.seatRealtimeUnsubscribe = subscribeSeatMap(payload.publicSeatMapId, {
+    onData: (seatMapData) => {
+      applySeatMapPayload(seatMapData, { fromRealtime: true });
+    },
+    onError: () => {
+      stopSeatRealtime();
+      startSeatPolling();
+    }
+  });
+
+  stopSeatPolling();
+}
+
 async function loadSeatMap({ showErrors = false } = {}) {
   const classCode = normalizeClassCode(classCodeInput.value);
 
   if (!classCode) {
     seatBoard.innerHTML = "";
     seatStatusText.textContent = "הקלידו קוד כיתה כדי לראות את לוח המקומות.";
+    stopSeatRealtime();
     state.selectedSeatNumber = 0;
+    state.publicSeatMapId = "";
     updateSeatBadge();
     updateJoinButtonAvailability();
     return;
@@ -296,34 +376,10 @@ async function loadSeatMap({ showErrors = false } = {}) {
   try {
     const response = await getSeatMapCallable({ classCode });
     const payload = response.data;
-    const availableCount = payload.seats.filter((seat) => seat.status === "available").length;
-    const previouslySelectedSeat = state.selectedSeatNumber;
-
-    state.classCode = payload.classCode;
-
-    if (
-      state.selectedSeatNumber &&
-      payload.seats.some(
-        (seat) =>
-          seat.seatNumber === state.selectedSeatNumber &&
-          seat.status === "taken" &&
-          !(state.sessionId && state.seatNumber === state.selectedSeatNumber)
-      )
-    ) {
-      state.selectedSeatNumber = 0;
-      updateSeatBadge();
-      if (!state.sessionId && previouslySelectedSeat) {
-        showStatus(
-          "warn",
-          "המקום נתפס בינתיים",
-          `מקום ${previouslySelectedSeat} כבר לא פנוי. בחרו מקום אחר בלוח.`
-        );
-      }
+    applySeatMapPayload(payload);
+    if (!state.sessionId) {
+      ensureSeatRealtime(payload);
     }
-
-    renderSeatBoard(payload.seats);
-    seatStatusText.textContent = `יש כרגע ${availableCount} מקומות פנויים.`;
-    updateJoinButtonAvailability();
   } catch (error) {
     seatBoard.innerHTML = "";
     seatStatusText.textContent = "לא הצלחתי לטעון את המקומות כרגע.";
@@ -597,6 +653,8 @@ classCodeInput.addEventListener("input", () => {
   const currentCode = normalizeClassCode(classCodeInput.value);
 
   if (!state.sessionId) {
+    stopSeatRealtime();
+    state.publicSeatMapId = "";
     state.selectedSeatNumber = 0;
     updateSeatBadge();
   }

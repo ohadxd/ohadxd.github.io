@@ -24,6 +24,7 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const storage = admin.storage();
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+const PROMPT_LAB_WEB_API_KEY = defineSecret("PROMPT_LAB_WEB_API_KEY");
 
 function getCallableOptions(extra = {}) {
   return {
@@ -38,6 +39,20 @@ function normalizeSecretValue(value) {
   }
 
   return value.replace(/^\uFEFF/, "").trim();
+}
+
+function buildPublicSeatMapId(normalizedCode) {
+  return createHash("sha256")
+    .update(`${ACTIVITY_CONFIG.activitySlug}|${normalizedCode}`)
+    .digest("hex")
+    .slice(0, 24);
+}
+
+function buildClientFirebaseConfig(apiKey) {
+  return {
+    ...ACTIVITY_CONFIG.firebaseWebApp,
+    apiKey
+  };
 }
 
 function assertStringValue(value, code, message) {
@@ -179,6 +194,58 @@ async function touchSeatClaim(classRef, seatNumber, sessionId, studentName) {
   );
 }
 
+async function buildSeatMapPayload(classRef, classData, normalizedCode) {
+  const seatCount = getSeatCount(classData);
+  const seatSnapshot = await classRef.collection("seats").get();
+  const now = new Date();
+  const seatLookup = new Map();
+
+  for (const seatDoc of seatSnapshot.docs) {
+    const seatData = seatDoc.data();
+    const activeSessionId = getActiveSeatSessionId(seatData, now);
+
+    if (!activeSessionId) {
+      continue;
+    }
+
+    seatLookup.set(Number(seatData.seatNumber || 0), {
+      status: "taken"
+    });
+  }
+
+  const seats = Array.from({ length: seatCount }, (_, index) => {
+    const seatNumber = index + 1;
+    const activeSeat = seatLookup.get(seatNumber);
+
+    return {
+      seatNumber,
+      status: activeSeat ? "taken" : "available"
+    };
+  });
+
+  return {
+    classLabel: classData.label || "",
+    classCode: normalizedCode,
+    publicSeatMapId: buildPublicSeatMapId(normalizedCode),
+    seatCount,
+    seats
+  };
+}
+
+async function publishPublicSeatMap(seatMapPayload) {
+  const publicSeatMapRef = db.collection("publicSeatMaps").doc(seatMapPayload.publicSeatMapId);
+
+  await publicSeatMapRef.set(
+    {
+      classLabel: seatMapPayload.classLabel,
+      seatCount: seatMapPayload.seatCount,
+      seats: seatMapPayload.seats,
+      updatedAt: FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+}
+
 async function generateImageWithGemini(ai, finalPromptHebrew) {
   const response = await ai.models.generateContent({
     model: ACTIVITY_CONFIG.imageModel,
@@ -224,7 +291,6 @@ async function saveGeneratedImageToStorage(image, sessionData, sessionId, usageI
       cacheControl: "public,max-age=31536000,immutable",
       metadata: {
         firebaseStorageDownloadTokens: downloadToken,
-        classCode: normalizedCode,
         sessionId: String(sessionId || "")
       }
     }
@@ -238,44 +304,22 @@ async function saveGeneratedImageToStorage(image, sessionData, sessionId, usageI
   };
 }
 
-exports.getSeatMap = onCall(getCallableOptions(), async (request) => {
+exports.getSeatMap = onCall(
+  getCallableOptions({
+    secrets: [PROMPT_LAB_WEB_API_KEY]
+  }),
+  async (request) => {
   const { classRef, classData, normalizedCode } = await loadClassAccessCode(
     request.data?.classCode
   );
-  const seatCount = getSeatCount(classData);
-  const seatSnapshot = await classRef.collection("seats").get();
-  const now = new Date();
-  const seatLookup = new Map();
-
-  for (const seatDoc of seatSnapshot.docs) {
-    const seatData = seatDoc.data();
-    const activeSessionId = getActiveSeatSessionId(seatData, now);
-
-    if (!activeSessionId) {
-      continue;
-    }
-
-    seatLookup.set(Number(seatData.seatNumber || 0), {
-      status: "taken"
-    });
-  }
-
-  const seats = Array.from({ length: seatCount }, (_, index) => {
-    const seatNumber = index + 1;
-    const activeSeat = seatLookup.get(seatNumber);
-
-    return {
-      seatNumber,
-      status: activeSeat ? "taken" : "available"
-    };
-  });
+  const seatMapPayload = await buildSeatMapPayload(classRef, classData, normalizedCode);
+  const webApiKey = normalizeSecretValue(PROMPT_LAB_WEB_API_KEY.value());
+  await publishPublicSeatMap(seatMapPayload);
 
   return {
     ok: true,
-    classCode: normalizedCode,
-    classLabel: classData.label || "",
-    seatCount,
-    seats
+    ...seatMapPayload,
+    firebaseConfig: webApiKey ? buildClientFirebaseConfig(webApiKey) : null
   };
 });
 
@@ -346,6 +390,8 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
     );
   });
 
+  await publishPublicSeatMap(await buildSeatMapPayload(classRef, classData, normalizedCode));
+
   return {
     ok: true,
     sessionId: sessionRef.id,
@@ -399,6 +445,8 @@ exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
     );
   });
 
+  await publishPublicSeatMap(await buildSeatMapPayload(classRef, classData, normalizedCode));
+
   return {
     ok: true,
     sessionId: sessionRef.id,
@@ -426,7 +474,7 @@ exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
 
 exports.leaveActivity = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
-  const { classRef } = await loadClassAccessCode(sessionData.classCode);
+  const { classRef, classData, normalizedCode } = await loadClassAccessCode(sessionData.classCode);
   const seatNumber = Number(sessionData.seatNumber || 0);
 
   await sessionRef.set(
@@ -445,6 +493,8 @@ exports.leaveActivity = onCall(getCallableOptions(), async (request) => {
       logger.error("Failed to release seat after leaveActivity", error);
     });
   }
+
+  await publishPublicSeatMap(await buildSeatMapPayload(classRef, classData, normalizedCode));
 
   return {
     ok: true,
