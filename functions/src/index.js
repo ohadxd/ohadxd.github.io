@@ -134,6 +134,78 @@ function getGenerationLimit(classData) {
   return ACTIVITY_CONFIG.defaultGenerationsPerStudent;
 }
 
+function getSeatCount(classData) {
+  const rawSeatCount = Number(classData.seatCount);
+
+  if (Number.isFinite(rawSeatCount) && rawSeatCount > 0) {
+    return Math.floor(rawSeatCount);
+  }
+
+  return ACTIVITY_CONFIG.defaultSeatCount;
+}
+
+function normalizeSeatNumber(seatNumber, seatCount) {
+  const numericSeat = Number(seatNumber);
+
+  if (!Number.isInteger(numericSeat) || numericSeat < 1 || numericSeat > seatCount) {
+    throw new HttpsError("invalid-argument", ACTIVITY_CONFIG.invalidSeatNumber);
+  }
+
+  return numericSeat;
+}
+
+function formatSeatId(seatNumber) {
+  return String(seatNumber).padStart(2, "0");
+}
+
+function buildSeatTimestamp(date = new Date()) {
+  const seatExpiry = new Date(date.getTime() + ACTIVITY_CONFIG.seatClaimMinutes * 60 * 1000);
+  return Timestamp.fromDate(seatExpiry);
+}
+
+function getActiveSeatSessionId(seatData, now = new Date()) {
+  if (!seatData || seatData.status !== "taken" || !seatData.sessionId) {
+    return "";
+  }
+
+  if (!(seatData.claimedUntil instanceof Timestamp)) {
+    return seatData.sessionId;
+  }
+
+  return seatData.claimedUntil.toDate().getTime() > now.getTime() ? seatData.sessionId : "";
+}
+
+function buildSeatPayload({ classCode, seatNumber, sessionId, studentName }) {
+  return {
+    classCode,
+    seatNumber,
+    sessionId,
+    status: "taken",
+    studentName,
+    lastSeenAt: FieldValue.serverTimestamp(),
+    claimedUntil: buildSeatTimestamp(),
+    updatedAt: FieldValue.serverTimestamp()
+  };
+}
+
+async function touchSeatClaim(classRef, seatNumber, sessionId, studentName) {
+  if (!Number.isInteger(seatNumber) || seatNumber < 1) {
+    return;
+  }
+
+  const seatRef = classRef.collection("seats").doc(formatSeatId(seatNumber));
+
+  await seatRef.set(
+    buildSeatPayload({
+      classCode: classRef.id,
+      seatNumber,
+      sessionId,
+      studentName
+    }),
+    { merge: true }
+  );
+}
+
 async function buildFinalEnglishPrompt(ai, steps) {
   const payload = JSON.stringify(getStepTemplatePayload(steps), null, 2);
   const translationPrompt =
@@ -225,14 +297,58 @@ async function generateImageWithGemini(ai, finalPrompt) {
   throw new Error("Gemini image generation did not return image data.");
 }
 
+exports.getSeatMap = onCall(getCallableOptions(), async (request) => {
+  const { classRef, classData, normalizedCode } = await loadClassAccessCode(
+    request.data?.classCode
+  );
+  const seatCount = getSeatCount(classData);
+  const seatSnapshot = await classRef.collection("seats").get();
+  const now = new Date();
+  const seatLookup = new Map();
+
+  for (const seatDoc of seatSnapshot.docs) {
+    const seatData = seatDoc.data();
+    const activeSessionId = getActiveSeatSessionId(seatData, now);
+
+    if (!activeSessionId) {
+      continue;
+    }
+
+    seatLookup.set(Number(seatData.seatNumber || 0), {
+      status: "taken"
+    });
+  }
+
+  const seats = Array.from({ length: seatCount }, (_, index) => {
+    const seatNumber = index + 1;
+    const activeSeat = seatLookup.get(seatNumber);
+
+    return {
+      seatNumber,
+      status: activeSeat ? "taken" : "available"
+    };
+  });
+
+  return {
+    ok: true,
+    classCode: normalizedCode,
+    classLabel: classData.label || "",
+    seatCount,
+    seats
+  };
+});
+
 exports.joinActivity = onCall(getCallableOptions(), async (request) => {
   const studentName = sanitizeStudentName(request.data?.studentName);
   const { classRef, classData, normalizedCode } = await loadClassAccessCode(
     request.data?.classCode
   );
-
-  const sessionRef = db.collection("studentSessions").doc();
+  const seatCount = getSeatCount(classData);
+  const seatNumber = normalizeSeatNumber(request.data?.seatNumber, seatCount);
   const generationLimit = getGenerationLimit(classData);
+  const sessionRef = db.collection("studentSessions").doc();
+  const seatRef = classRef.collection("seats").doc(formatSeatId(seatNumber));
+  const now = new Date();
   const sessionPayload = {
     activitySlug: ACTIVITY_CONFIG.activitySlug,
     classCode: normalizedCode,
@@ -251,21 +367,43 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
       style: "",
       detail: ""
     },
+    seatNumber,
     status: "joined",
     studentName,
     updatedAt: FieldValue.serverTimestamp()
   };
 
-  await sessionRef.set(sessionPayload);
-  await classRef.set(
-    {
-      activitySlug: ACTIVITY_CONFIG.activitySlug,
-      lastJoinedAt: FieldValue.serverTimestamp(),
-      participantsCount: FieldValue.increment(1),
-      totalSessions: FieldValue.increment(1)
-    },
-    { merge: true }
-  );
+  await db.runTransaction(async (transaction) => {
+    const seatSnapshot = await transaction.get(seatRef);
+    const seatData = seatSnapshot.exists ? seatSnapshot.data() : null;
+    const activeSeatSessionId = getActiveSeatSessionId(seatData, now);
+
+    if (activeSeatSessionId) {
+      throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.seatTaken);
+    }
+
+    transaction.set(sessionRef, sessionPayload);
+    transaction.set(
+      seatRef,
+      buildSeatPayload({
+        classCode: normalizedCode,
+        seatNumber,
+        sessionId: sessionRef.id,
+        studentName
+      }),
+      { merge: true }
+    );
+    transaction.set(
+      classRef,
+      {
+        activitySlug: ACTIVITY_CONFIG.activitySlug,
+        lastJoinedAt: FieldValue.serverTimestamp(),
+        participantsCount: FieldValue.increment(1),
+        totalSessions: FieldValue.increment(1)
+      },
+      { merge: true }
+    );
+  });
 
   return {
     ok: true,
@@ -273,14 +411,81 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
     classCode: normalizedCode,
     classLabel: classData.label || "",
     studentName,
+    seatNumber,
     generationLimit,
     remainingGenerations: generationLimit,
+    promptSteps: sessionPayload.promptSteps,
     message: ACTIVITY_CONFIG.welcomeMessage
+  };
+});
+
+exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
+  const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
+  const { classRef, classData, normalizedCode } = await loadClassAccessCode(
+    sessionData.classCode
+  );
+  const seatCount = getSeatCount(classData);
+  const seatNumber = normalizeSeatNumber(sessionData.seatNumber, seatCount);
+  const seatRef = classRef.collection("seats").doc(formatSeatId(seatNumber));
+  const now = new Date();
+
+  await db.runTransaction(async (transaction) => {
+    const seatSnapshot = await transaction.get(seatRef);
+    const seatData = seatSnapshot.exists ? seatSnapshot.data() : null;
+    const activeSeatSessionId = getActiveSeatSessionId(seatData, now);
+
+    if (activeSeatSessionId && activeSeatSessionId !== sessionRef.id) {
+      throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.seatRestoreFailed);
+    }
+
+    transaction.set(
+      sessionRef,
+      {
+        lastSeenAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+    transaction.set(
+      seatRef,
+      buildSeatPayload({
+        classCode: normalizedCode,
+        seatNumber,
+        sessionId: sessionRef.id,
+        studentName: sessionData.studentName || "תלמיד/ה"
+      }),
+      { merge: true }
+    );
+  });
+
+  return {
+    ok: true,
+    sessionId: sessionRef.id,
+    classCode: normalizedCode,
+    classLabel: classData.label || "",
+    studentName: sessionData.studentName || "תלמיד/ה",
+    seatNumber,
+    generationLimit: Number(sessionData.generationLimit || getGenerationLimit(classData)),
+    remainingGenerations: Math.max(
+      Number(sessionData.generationLimit || getGenerationLimit(classData)) -
+        Number(sessionData.generationsCount || 0),
+      0
+    ),
+    promptSteps: sessionData.promptSteps || {
+      character: "",
+      place: "",
+      action: "",
+      style: "",
+      detail: ""
+    },
+    isPromptComplete: Boolean(sessionData.isPromptComplete),
+    message: ACTIVITY_CONFIG.resumeMessage
   };
 });
 
 exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
+  const { classRef } = await loadClassAccessCode(sessionData.classCode);
   const steps = sanitizePromptSteps(request.data?.steps);
   const validation = buildValidationResponse(steps);
   const draft = buildSessionDraft(steps, validation);
@@ -294,6 +499,12 @@ exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
       updatedAt: FieldValue.serverTimestamp()
     },
     { merge: true }
+  );
+  await touchSeatClaim(
+    classRef,
+    Number(sessionData.seatNumber || 0),
+    sessionRef.id,
+    sessionData.studentName || "תלמיד/ה"
   );
 
   return {
@@ -320,14 +531,20 @@ exports.generateImage = onCall(
     const validation = buildValidationResponse(steps);
 
     if (!validation.isComplete) {
-      await sessionRef.set(
-        {
-          ...buildSessionDraft(steps, validation),
-          lastSeenAt: FieldValue.serverTimestamp(),
-          status: "building",
+    await sessionRef.set(
+      {
+        ...buildSessionDraft(steps, validation),
+        lastSeenAt: FieldValue.serverTimestamp(),
+        status: "building",
           updatedAt: FieldValue.serverTimestamp()
         },
         { merge: true }
+      );
+      await touchSeatClaim(
+        classRef,
+        Number(sessionData.seatNumber || 0),
+        sessionRef.id,
+        sessionData.studentName || "תלמיד/ה"
       );
 
       return {
@@ -390,6 +607,12 @@ exports.generateImage = onCall(
         updatedAt: FieldValue.serverTimestamp()
       },
       { merge: true }
+    );
+    await touchSeatClaim(
+      classRef,
+      Number(sessionData.seatNumber || 0),
+      sessionRef.id,
+      sessionData.studentName || "תלמיד/ה"
     );
 
     await classRef.set(

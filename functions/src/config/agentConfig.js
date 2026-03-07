@@ -47,10 +47,14 @@ const ACTIVITY_CONFIG = {
   textModel: "gemini-2.5-flash",
   imageModel: "gemini-2.5-flash-image",
   defaultGenerationsPerStudent: 3,
+  defaultSeatCount: 25,
+  seatClaimMinutes: 120,
   maxStepLength: 160,
   maxNameLength: 40,
   welcomeMessage:
     "איזה יופי, הצטרפתם לפעילות. עכשיו נבנה פרומפט חכם צעד אחרי צעד.",
+  resumeMessage:
+    "חזרתם למקום שלכם. הפרומפט שלכם נשמר ואפשר להמשיך מאיפה שעצרתם.",
   readyMessage:
     "מעולה. כל חמשת השלבים מלאים, ואפשר להכין פרומפט מסודר לתמונה.",
   missingPrefix:
@@ -65,6 +69,12 @@ const ACTIVITY_CONFIG = {
     "קוד הכיתה הזה כבר לא פעיל. בקשו מהמורה קוד חדש.",
   sessionNotFound:
     "לא מצאתי את הסשן של התלמיד. התחילו מחדש עם קוד הכיתה.",
+  invalidSeatNumber:
+    "בחרו מקום אחד פנוי מתוך הלוח לפני הכניסה לפעילות.",
+  seatTaken:
+    "המקום הזה כבר תפוס. בחרו מקום אחר בלוח.",
+  seatRestoreFailed:
+    "לא הצלחתי לשחזר את המקום שלכם. בחרו שוב מקום פנוי.",
   childSafeTone:
     "דברו בעברית פשוטה, קצרה ומעודדת שמתאימה לתלמידי כיתות ה-ו."
 };

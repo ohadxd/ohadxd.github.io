@@ -38,6 +38,14 @@ export function joinActivityCallable(data) {
   return callFunction("joinActivity", data);
 }
 
+export function getSeatMapCallable(data) {
+  return callFunction("getSeatMap", data);
+}
+
+export function restoreActivityCallable(data) {
+  return callFunction("restoreActivity", data);
+}
+
 export function validatePromptStepsCallable(data) {
   return callFunction("validatePromptSteps", data);
 }
