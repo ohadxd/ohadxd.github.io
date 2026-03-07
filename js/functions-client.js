@@ -23,6 +23,20 @@ function getFunctionsOrigin() {
   return PRODUCTION_ORIGIN;
 }
 
+export function getDownloadGeneratedImageUrl(usageId, filename = "") {
+  const params = new URLSearchParams();
+
+  if (usageId) {
+    params.set("usageId", usageId);
+  }
+
+  if (filename) {
+    params.set("filename", filename);
+  }
+
+  return `${getFunctionsOrigin()}/downloadGeneratedImage?${params.toString()}`;
+}
+
 async function callFunction(functionName, data) {
   const response = await fetch(`${getFunctionsOrigin()}/${functionName}`, {
     method: "POST",

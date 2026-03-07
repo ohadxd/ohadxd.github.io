@@ -5,7 +5,7 @@ const { randomUUID, createHash } = require("node:crypto");
 const { GoogleGenAI } = require("@google/genai");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
-const { HttpsError, onCall } = require("firebase-functions/v2/https");
+const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https");
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { ACTIVITY_CONFIG } = require("./config/agentConfig");
 const {
@@ -302,6 +302,41 @@ async function saveGeneratedImageToStorage(image, sessionData, sessionId, usageI
       `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
       `${encodeURIComponent(filePath)}?alt=media&token=${downloadToken}`
   };
+}
+
+function sanitizeDownloadFilename(filename, mimeType) {
+  const fallbackExtension = mimeType === "image/jpeg" ? "jpg" : "png";
+  const safeBaseName = String(filename || "funlab-image")
+    .replace(/[^\w\u0590-\u05FF.-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+  const baseName = safeBaseName || "funlab-image";
+
+  if (/\.(png|jpg|jpeg)$/i.test(baseName)) {
+    return baseName;
+  }
+
+  return `${baseName}.${fallbackExtension}`;
+}
+
+function buildAsciiFilename(filename, mimeType) {
+  const fallbackExtension = mimeType === "image/jpeg" ? "jpg" : "png";
+  const asciiName = String(filename || "funlab-image")
+    .replace(/[^\x20-\x7E]+/g, "-")
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+  if (!asciiName) {
+    return `funlab-image.${fallbackExtension}`;
+  }
+
+  if (/\.(png|jpg|jpeg)$/i.test(asciiName)) {
+    return asciiName;
+  }
+
+  return `${asciiName}.${fallbackExtension}`;
 }
 
 exports.getSeatMap = onCall(
@@ -687,3 +722,74 @@ exports.generateImage = onCall(
     };
   }
 );
+
+exports.downloadGeneratedImage = onRequest(getCallableOptions(), async (request, response) => {
+  if (request.method !== "GET") {
+    response.set("Allow", "GET");
+    response.status(405).send("Method Not Allowed");
+    return;
+  }
+
+  try {
+    const usageId = String(request.query.usageId || "").trim();
+
+    if (!usageId) {
+      response.status(400).send("Missing usageId.");
+      return;
+    }
+
+    const usageSnapshot = await db.collection("generationUsage").doc(usageId).get();
+
+    if (!usageSnapshot.exists) {
+      response.status(404).send("Image not found.");
+      return;
+    }
+
+    const usageData = usageSnapshot.data() || {};
+    const imageStoragePath = String(usageData.imageStoragePath || "").trim();
+    const imageMimeType = String(usageData.imageMimeType || "image/png").trim() || "image/png";
+
+    if (!imageStoragePath) {
+      response.status(404).send("Stored image is not available.");
+      return;
+    }
+
+    const bucket = storage.bucket();
+    const file = bucket.file(imageStoragePath);
+    const [exists] = await file.exists();
+
+    if (!exists) {
+      response.status(404).send("Stored image file was not found.");
+      return;
+    }
+
+    const requestedFilename = sanitizeDownloadFilename(
+      request.query.filename,
+      imageMimeType
+    );
+    const asciiFilename = buildAsciiFilename(requestedFilename, imageMimeType);
+
+    response.setHeader("Content-Type", imageMimeType);
+    response.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(requestedFilename)}`
+    );
+    response.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
+
+    file.createReadStream()
+      .on("error", (error) => {
+        logger.error("Failed while streaming generated image download", error);
+
+        if (!response.headersSent) {
+          response.status(500).send("Failed to download image.");
+          return;
+        }
+
+        response.end();
+      })
+      .pipe(response);
+  } catch (error) {
+    logger.error("downloadGeneratedImage failed", error);
+    response.status(500).send("Failed to download image.");
+  }
+});
