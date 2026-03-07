@@ -7,7 +7,7 @@ import {
   setRealtimeClientConfig,
   subscribeSeatMap,
   validatePromptStepsCallable
-} from "/js/functions-client.js?v=20260308-seat-realtime-1";
+} from "/js/functions-client.js?v=20260308-download-1";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
@@ -86,6 +86,28 @@ function buildHebrewPromptPreview(steps) {
     `סגנון חזותי: ${steps.style || "-"}`,
     `פרט מיוחד: ${steps.detail || "-"}`
   ].join("\n");
+}
+
+async function downloadImageFile(url, filename) {
+  const response = await fetch(url, { mode: "cors" });
+
+  if (!response.ok) {
+    throw new Error("לא הצלחתי להוריד את התמונה.");
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const tempLink = document.createElement("a");
+
+  tempLink.href = objectUrl;
+  tempLink.download = filename;
+  document.body.appendChild(tempLink);
+  tempLink.click();
+  tempLink.remove();
+
+  window.setTimeout(() => {
+    URL.revokeObjectURL(objectUrl);
+  }, 1500);
 }
 
 function fillSteps(steps = emptySteps) {
@@ -597,8 +619,10 @@ generateButton.addEventListener("click", async () => {
 
     updateRemainingBadge(payload.remainingGenerations);
     imagePreview.src = payload.imageDataUrl;
-    downloadImageButton.href = payload.imageDownloadUrl || payload.imageDataUrl;
-    downloadImageButton.download = `funlab-seat-${state.seatNumber || "00"}-${Date.now()}.png`;
+    downloadImageButton.href = "#";
+    downloadImageButton.dataset.downloadUrl = payload.imageDownloadUrl || payload.imageDataUrl;
+    downloadImageButton.dataset.filename =
+      `funlab-seat-${state.seatNumber || "00"}-${Date.now()}.png`;
     downloadImageButton.hidden = false;
     if (payload.imageStoragePath) {
       savedImageNote.textContent = "התמונה נשמרה גם בענן ואפשר להוריד אותה עכשיו.";
@@ -619,6 +643,30 @@ generateButton.addEventListener("click", async () => {
     );
   } finally {
     setButtonState(generateButton, false, "יצירת תמונה", "יוצר...");
+  }
+});
+
+downloadImageButton.addEventListener("click", async (event) => {
+  event.preventDefault();
+
+  const downloadUrl = downloadImageButton.dataset.downloadUrl || downloadImageButton.href;
+  const filename =
+    downloadImageButton.dataset.filename ||
+    `funlab-seat-${state.seatNumber || "00"}-${Date.now()}.png`;
+
+  if (!downloadUrl || downloadUrl === "#") {
+    showStatus("bad", "אין קובץ להורדה", "נסו ליצור את התמונה מחדש.");
+    return;
+  }
+
+  downloadImageButton.setAttribute("aria-busy", "true");
+
+  try {
+    await downloadImageFile(downloadUrl, filename);
+  } catch (error) {
+    showStatus("bad", "ההורדה נכשלה", error.message || "נסו שוב בעוד רגע.");
+  } finally {
+    downloadImageButton.removeAttribute("aria-busy");
   }
 });
 
