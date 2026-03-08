@@ -76,6 +76,14 @@ function sanitizePromptField(value) {
   return value.replace(/[`"']/g, "").replace(/\s+/g, " ").trim();
 }
 
+function sanitizeEnglishPromptField(value) {
+  return sanitizePromptField(value).replace(/[^\x20-\x7E]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function containsHebrew(value) {
+  return /[\u0590-\u05FF]/.test(String(value || ""));
+}
+
 function buildFinalHebrewPrompt(steps) {
   const character = sanitizePromptField(steps.character);
   const place = sanitizePromptField(steps.place);
@@ -93,6 +101,24 @@ function buildFinalHebrewPrompt(steps) {
   ].join(" ");
 }
 
+function buildFinalEnglishPrompt(steps) {
+  const character = sanitizeEnglishPromptField(steps.character);
+  const place = sanitizeEnglishPromptField(steps.place);
+  const action = sanitizeEnglishPromptField(steps.action);
+  const style = sanitizeEnglishPromptField(steps.style);
+  const detail = sanitizeEnglishPromptField(steps.detail);
+
+  return [
+    "Create a child-friendly image.",
+    `Main subject: ${character}.`,
+    `Setting: ${place}.`,
+    `Action: ${action}.`,
+    `Visual style: ${style}.`,
+    `Special detail: ${detail}.`,
+    "High quality, clear composition, expressive lighting, rich detail."
+  ].join(" ");
+}
+
 function buildSessionDraft(steps, validation) {
   return {
     promptSteps: steps,
@@ -104,9 +130,11 @@ function buildSessionDraft(steps, validation) {
 }
 
 module.exports = {
+  buildFinalEnglishPrompt,
   buildFinalHebrewPrompt,
   buildSessionDraft,
   buildValidationResponse,
+  containsHebrew,
   normalizeClassCode,
   sanitizePromptSteps,
   sanitizeStudentName

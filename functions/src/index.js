@@ -9,9 +9,11 @@ const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https")
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { ACTIVITY_CONFIG } = require("./config/agentConfig");
 const {
+  buildFinalEnglishPrompt,
   buildFinalHebrewPrompt,
   buildSessionDraft,
   buildValidationResponse,
+  containsHebrew,
   normalizeClassCode,
   sanitizePromptSteps,
   sanitizeStudentName
@@ -246,10 +248,10 @@ async function publishPublicSeatMap(seatMapPayload) {
   );
 }
 
-async function generateImageWithGemini(ai, finalPromptHebrew) {
+async function generateImageWithGemini(ai, finalPromptText) {
   const response = await ai.models.generateContent({
     model: ACTIVITY_CONFIG.imageModel,
-    contents: finalPromptHebrew,
+    contents: finalPromptText,
     config: {
       responseModalities: ["TEXT", "IMAGE"]
     }
@@ -267,6 +269,89 @@ async function generateImageWithGemini(ai, finalPromptHebrew) {
   }
 
   throw new Error("Gemini image generation did not return image data.");
+}
+
+function extractTextFromGeminiResponse(response) {
+  if (typeof response?.text === "string" && response.text.trim()) {
+    return response.text.trim();
+  }
+
+  const textParts = [];
+
+  for (const candidate of response?.candidates || []) {
+    for (const part of candidate.content?.parts || []) {
+      if (typeof part.text === "string" && part.text.trim()) {
+        textParts.push(part.text.trim());
+      }
+    }
+  }
+
+  return textParts.join("\n").trim();
+}
+
+function parseJsonObjectFromText(text) {
+  const rawText = String(text || "").trim();
+  const withoutFence = rawText
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const jsonStart = withoutFence.indexOf("{");
+  const jsonEnd = withoutFence.lastIndexOf("}");
+
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) {
+    throw new Error("Translation response did not include JSON.");
+  }
+
+  return JSON.parse(withoutFence.slice(jsonStart, jsonEnd + 1));
+}
+
+function sanitizeTranslatedSteps(rawSteps) {
+  const translatedSteps = {
+    character: String(rawSteps?.character || "").trim(),
+    place: String(rawSteps?.place || "").trim(),
+    action: String(rawSteps?.action || "").trim(),
+    style: String(rawSteps?.style || "").trim(),
+    detail: String(rawSteps?.detail || "").trim()
+  };
+
+  const hasMissingValue = Object.values(translatedSteps).some((value) => !value);
+  const hasHebrewText = Object.values(translatedSteps).some((value) => containsHebrew(value));
+
+  if (hasMissingValue || hasHebrewText) {
+    throw new Error("Translation response was incomplete.");
+  }
+
+  return translatedSteps;
+}
+
+async function translateStepsToEnglish(ai, steps) {
+  const translationPrompt = [
+    ACTIVITY_CONFIG.englishTranslationInstruction,
+    "Student steps JSON:",
+    JSON.stringify(steps)
+  ].join("\n");
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const response = await ai.models.generateContent({
+      model: ACTIVITY_CONFIG.textModel,
+      contents: translationPrompt,
+      config: {
+        temperature: 0.1
+      }
+    });
+    const responseText = extractTextFromGeminiResponse(response);
+
+    try {
+      return sanitizeTranslatedSteps(parseJsonObjectFromText(responseText));
+    } catch (error) {
+      if (attempt === 1) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error("Failed to translate prompt steps to English.");
 }
 
 function buildStoragePartition(sessionId) {
@@ -356,6 +441,7 @@ function buildCreationHistoryItem(usageDoc) {
     createdAtMs: getTimestampMillis(usageData.createdAt),
     imagePreviewUrl: String(usageData.imageDownloadUrl || "").trim(),
     imageStoragePath: String(usageData.imageStoragePath || "").trim(),
+    finalPromptEnglish: String(usageData.finalPromptEnglish || "").trim(),
     finalPromptHebrew: String(usageData.finalPromptHebrew || "").trim(),
     stepSnapshot: usageData.stepSnapshot || {
       character: "",
@@ -689,11 +775,13 @@ exports.generateImage = onCall(
 
     const ai = new GoogleGenAI({ apiKey });
     let finalPromptHebrew;
+    let finalPromptEnglish;
     let image;
 
     try {
       finalPromptHebrew = buildFinalHebrewPrompt(steps);
-      image = await generateImageWithGemini(ai, finalPromptHebrew);
+      finalPromptEnglish = buildFinalEnglishPrompt(await translateStepsToEnglish(ai, steps));
+      image = await generateImageWithGemini(ai, finalPromptEnglish);
     } catch (error) {
       logger.error("Failed to generate an image from validated prompt steps", error);
       throw new HttpsError(
@@ -728,6 +816,7 @@ exports.generateImage = onCall(
         lastGeneratedAt: FieldValue.serverTimestamp(),
         lastGeneratedImagePath: storedImage.imageStoragePath || "",
         lastGeneratedImageUrl: storedImage.imageDownloadUrl || "",
+        lastGeneratedPromptEnglish: finalPromptEnglish,
         lastGeneratedPrompt: finalPromptHebrew,
         lastSeenAt: FieldValue.serverTimestamp(),
         status: "generated",
@@ -753,6 +842,7 @@ exports.generateImage = onCall(
     await usageRef.set({
       classCode: normalizedCode,
       createdAt: FieldValue.serverTimestamp(),
+      finalPromptEnglish,
       finalPromptHebrew,
       generationIndex: newGenerationCount,
       imageDownloadUrl: storedImage.imageDownloadUrl || "",
@@ -770,6 +860,7 @@ exports.generateImage = onCall(
       imageDataUrl: `data:${image.mimeType};base64,${image.imageBase64}`,
       imageDownloadUrl: storedImage.imageDownloadUrl || "",
       imageStoragePath: storedImage.imageStoragePath || "",
+      finalPromptEnglish,
       finalPromptHebrew,
       remainingGenerations: Math.max(generationLimit - newGenerationCount, 0),
       usageId: usageRef.id,

@@ -45,6 +45,7 @@ const ACTIVITY_CONFIG = {
   activityTitle: "מעבדת פרומפטים",
   region: "europe-west1",
   imageModel: "gemini-2.5-flash-image",
+  textModel: "gemini-2.5-flash",
   firebaseWebApp: {
     appId: "1:56393078768:web:0f6c29d78a6dcdb4516f35",
     authDomain: "groovetech-9a3fb.firebaseapp.com",
@@ -84,7 +85,14 @@ const ACTIVITY_CONFIG = {
   seatRestoreFailed:
     "לא הצלחתי לשחזר את המקום שלכם. בחרו שוב מקום פנוי.",
   childSafeTone:
-    "דברו בעברית פשוטה, קצרה ומעודדת שמתאימה לתלמידי כיתות ה-ו."
+    "דברו בעברית פשוטה, קצרה ומעודדת שמתאימה לתלמידי כיתות ה-ו.",
+  englishTranslationInstruction: [
+    "Translate the student's five prompt-building steps from Hebrew into natural, child-safe English.",
+    "Return valid JSON only with exactly these keys: character, place, action, style, detail.",
+    "Keep each value short, vivid, and suitable for an image model.",
+    "Do not add explanations, markdown, numbering, or extra keys.",
+    "Do not leave Hebrew text in the output."
+  ].join(" ")
 };
 
 module.exports = {
