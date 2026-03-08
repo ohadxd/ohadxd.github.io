@@ -124,6 +124,10 @@ export function restoreActivityCallable(data) {
   return callFunction("restoreActivity", data);
 }
 
+export function getStudentCreationsCallable(data) {
+  return callFunction("getStudentCreations", data);
+}
+
 export function leaveActivityCallable(data) {
   return callFunction("leaveActivity", data);
 }

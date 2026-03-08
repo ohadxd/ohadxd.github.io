@@ -1168,3 +1168,81 @@ figure,
   text-align: right;
   font-family: inherit;
 }
+
+.student-gallery-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.gallery-empty{
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px dashed #cfe3f7;
+  background: #f6fbff;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 700;
+}
+
+.gallery-card{
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid #d8e8f8;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  box-shadow: 0 8px 18px rgba(41,79,138,0.08);
+}
+
+.gallery-card.is-active{
+  border-color: #f59e0b;
+  box-shadow: 0 12px 22px rgba(245,158,11,0.16);
+}
+
+.gallery-card img{
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid #d8e8f8;
+  background: #edf6ff;
+}
+
+.gallery-card-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gallery-card-title{
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.gallery-card-meta{
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.gallery-card-copy{
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.gallery-card-actions{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gallery-card-actions .btn-ghost,
+.gallery-card-actions .btn-primary{
+  padding: 8px 12px;
+  font-size: 14px;
+}

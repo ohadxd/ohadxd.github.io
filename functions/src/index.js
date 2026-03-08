@@ -339,6 +339,51 @@ function buildAsciiFilename(filename, mimeType) {
   return `${asciiName}.${fallbackExtension}`;
 }
 
+function getTimestampMillis(value) {
+  if (value instanceof Timestamp) {
+    return value.toMillis();
+  }
+
+  return 0;
+}
+
+function buildCreationHistoryItem(usageDoc) {
+  const usageData = usageDoc.data() || {};
+
+  return {
+    usageId: usageDoc.id,
+    generationIndex: Number(usageData.generationIndex || 0),
+    createdAtMs: getTimestampMillis(usageData.createdAt),
+    imagePreviewUrl: String(usageData.imageDownloadUrl || "").trim(),
+    imageStoragePath: String(usageData.imageStoragePath || "").trim(),
+    finalPromptHebrew: String(usageData.finalPromptHebrew || "").trim(),
+    stepSnapshot: usageData.stepSnapshot || {
+      character: "",
+      place: "",
+      action: "",
+      style: "",
+      detail: ""
+    }
+  };
+}
+
+async function loadStudentCreations(sessionId) {
+  const snapshot = await db
+    .collection("generationUsage")
+    .where("sessionId", "==", sessionId)
+    .get();
+
+  return snapshot.docs
+    .map((usageDoc) => buildCreationHistoryItem(usageDoc))
+    .sort((left, right) => {
+      if (right.createdAtMs !== left.createdAtMs) {
+        return right.createdAtMs - left.createdAtMs;
+      }
+
+      return right.generationIndex - left.generationIndex;
+    });
+}
+
 exports.getSeatMap = onCall(
   getCallableOptions({
     secrets: [PROMPT_LAB_WEB_API_KEY]
@@ -504,6 +549,16 @@ exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
     },
     isPromptComplete: Boolean(sessionData.isPromptComplete),
     message: ACTIVITY_CONFIG.resumeMessage
+  };
+});
+
+exports.getStudentCreations = onCall(getCallableOptions(), async (request) => {
+  const { sessionRef } = await loadSession(request.data?.sessionId);
+  const items = await loadStudentCreations(sessionRef.id);
+
+  return {
+    ok: true,
+    items
   };
 });
 

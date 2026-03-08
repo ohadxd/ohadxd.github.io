@@ -28,7 +28,7 @@
     "about": "Prompt Engineering for Children"
   }
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=20260308-seat-realtime-1" />
+  <link rel="stylesheet" href="/css/style.css?v=20260308-gallery-1" />
 </head>
 <body>
   <div class="wrap">
@@ -251,6 +251,13 @@
           <pre id="finalPromptOutput"></pre>
         </div>
       </section>
+
+      <section id="studentGalleryCard" class="card" hidden>
+        <h2><span class="icon">🗂️</span> כל היצירות שלי</h2>
+        <p class="field-help">כאן נשמרות כל היצירות של המקום שלכם, כדי שתוכלו להשוות בין גרסאות ולראות מה השתנה.</p>
+        <div id="studentGalleryGrid" class="student-gallery-grid"></div>
+        <div id="studentGalleryEmpty" class="gallery-empty" hidden>עדיין אין כאן יצירות. כשתיצרו תמונה ראשונה, היא תופיע כאן ותישמר להשוואה.</div>
+      </section>
     </main>
 
     <footer class="footer">
@@ -262,6 +269,6 @@
     </footer>
   </div>
 
-  <script type="module" src="/js/prompt-lab.js?v=20260308-download-2"></script>
+  <script type="module" src="/js/prompt-lab.js?v=20260308-gallery-1"></script>
 </body>
 </html>

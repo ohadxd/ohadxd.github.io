@@ -2,13 +2,14 @@ import {
   generateImageCallable,
   getDownloadGeneratedImageUrl,
   getSeatMapCallable,
+  getStudentCreationsCallable,
   joinActivityCallable,
   leaveActivityCallable,
   restoreActivityCallable,
   setRealtimeClientConfig,
   subscribeSeatMap,
   validatePromptStepsCallable
-} from "/js/functions-client.js?v=20260308-download-2";
+} from "/js/functions-client.js?v=20260308-gallery-1";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
@@ -28,6 +29,9 @@ const statusText = document.getElementById("statusText");
 const missingList = document.getElementById("missingList");
 const activityCard = document.getElementById("activityCard");
 const resultCard = document.getElementById("resultCard");
+const studentGalleryCard = document.getElementById("studentGalleryCard");
+const studentGalleryGrid = document.getElementById("studentGalleryGrid");
+const studentGalleryEmpty = document.getElementById("studentGalleryEmpty");
 const sessionBadge = document.getElementById("sessionBadge");
 const remainingBadge = document.getElementById("remainingBadge");
 const selectedSeatBadge = document.getElementById("selectedSeatBadge");
@@ -58,10 +62,12 @@ const state = {
   selectedSeatNumber: 0,
   remainingGenerations: 0,
   seatMap: [],
+  generationHistory: [],
   autosaveTimer: null,
   seatPollTimer: null,
   publicSeatMapId: "",
-  seatRealtimeUnsubscribe: null
+  seatRealtimeUnsubscribe: null,
+  featuredUsageId: ""
 };
 
 function normalizeClassCode(value) {
@@ -87,6 +93,32 @@ function buildHebrewPromptPreview(steps) {
     `סגנון חזותי: ${steps.style || "-"}`,
     `פרט מיוחד: ${steps.detail || "-"}`
   ].join("\n");
+}
+
+function buildCreationFilename(creation) {
+  const seatLabel = String(state.seatNumber || creation?.seatNumber || "00").padStart(2, "0");
+  const generationLabel = String(creation?.generationIndex || 0).padStart(2, "0");
+  return `funlab-seat-${seatLabel}-gen-${generationLabel || "00"}.png`;
+}
+
+function getCreationPreviewUrl(creation) {
+  return creation?.imageDataUrl || creation?.imagePreviewUrl || "";
+}
+
+function buildCreationSummary(creation) {
+  if (creation?.finalPromptHebrew) {
+    return creation.finalPromptHebrew;
+  }
+
+  return buildHebrewPromptPreview(creation?.stepSnapshot || emptySteps);
+}
+
+function resetGalleryState() {
+  state.generationHistory = [];
+  state.featuredUsageId = "";
+  studentGalleryGrid.innerHTML = "";
+  studentGalleryCard.hidden = true;
+  studentGalleryEmpty.hidden = true;
 }
 
 function fillSteps(steps = emptySteps) {
@@ -190,6 +222,145 @@ function resetResults() {
   savedImageNote.hidden = true;
   savedImageNote.textContent = "";
   finalPromptOutput.textContent = "";
+}
+
+function showCreationAsMainResult(creation) {
+  const previewUrl = getCreationPreviewUrl(creation);
+
+  if (!previewUrl) {
+    return;
+  }
+
+  state.featuredUsageId = creation.usageId || "";
+  imagePreview.src = previewUrl;
+
+  if (creation.usageId && creation.imageStoragePath) {
+    downloadImageButton.href = getDownloadGeneratedImageUrl(
+      creation.usageId,
+      buildCreationFilename(creation)
+    );
+    downloadImageButton.dataset.downloadMode = "server";
+    downloadImageButton.removeAttribute("download");
+  } else {
+    downloadImageButton.href = previewUrl;
+    downloadImageButton.dataset.downloadMode = "client";
+    downloadImageButton.setAttribute("download", buildCreationFilename(creation));
+  }
+
+  downloadImageButton.hidden = false;
+  savedImageNote.textContent = creation.imageStoragePath
+    ? "התמונה נשמרה בענן ותישאר זמינה גם אחרי רענון."
+    : "התמונה זמינה כרגע מהעמוד הזה.";
+  savedImageNote.hidden = false;
+  finalPromptOutput.textContent = buildCreationSummary(creation);
+  resultCard.hidden = false;
+  renderGenerationGallery();
+}
+
+function renderGenerationGallery() {
+  studentGalleryGrid.innerHTML = "";
+
+  if (!state.sessionId) {
+    studentGalleryCard.hidden = true;
+    studentGalleryEmpty.hidden = true;
+    return;
+  }
+
+  if (!state.generationHistory.length) {
+    studentGalleryCard.hidden = false;
+    studentGalleryEmpty.hidden = false;
+    return;
+  }
+
+  studentGalleryCard.hidden = false;
+  studentGalleryEmpty.hidden = true;
+
+  for (const creation of state.generationHistory) {
+    const card = document.createElement("article");
+    const title = document.createElement("div");
+    const meta = document.createElement("div");
+    const head = document.createElement("div");
+    const preview = document.createElement("img");
+    const copy = document.createElement("div");
+    const actions = document.createElement("div");
+    const showButton = document.createElement("button");
+    const downloadLink = document.createElement("a");
+    const isActive = creation.usageId && creation.usageId === state.featuredUsageId;
+
+    card.className = `gallery-card${isActive ? " is-active" : ""}`;
+    head.className = "gallery-card-head";
+    title.className = "gallery-card-title";
+    meta.className = "gallery-card-meta";
+    copy.className = "gallery-card-copy";
+    actions.className = "gallery-card-actions";
+
+    title.textContent = `יצירה ${creation.generationIndex || "?"}`;
+    meta.textContent = creation.createdAtMs
+      ? new Date(creation.createdAtMs).toLocaleTimeString("he-IL", {
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      : "נשמרה עכשיו";
+    preview.src = getCreationPreviewUrl(creation);
+    preview.alt = `תצוגה מקדימה של יצירה ${creation.generationIndex || ""}`;
+    copy.textContent = buildCreationSummary(creation);
+
+    showButton.type = "button";
+    showButton.className = "btn-ghost";
+    showButton.textContent = isActive ? "מוצגת עכשיו" : "להציג בגדול";
+    showButton.disabled = isActive;
+    showButton.addEventListener("click", () => {
+      showCreationAsMainResult(creation);
+    });
+
+    downloadLink.className = "btn-primary";
+    downloadLink.textContent = "הורדה";
+    if (creation.usageId && creation.imageStoragePath) {
+      downloadLink.href = getDownloadGeneratedImageUrl(
+        creation.usageId,
+        buildCreationFilename(creation)
+      );
+    } else {
+      downloadLink.href = getCreationPreviewUrl(creation);
+      downloadLink.setAttribute("download", buildCreationFilename(creation));
+    }
+
+    head.append(title, meta);
+    actions.append(showButton, downloadLink);
+    card.append(head, preview, copy, actions);
+    studentGalleryGrid.appendChild(card);
+  }
+}
+
+async function loadGenerationHistory() {
+  if (!state.sessionId) {
+    resetGalleryState();
+    return;
+  }
+
+  try {
+    const response = await getStudentCreationsCallable({
+      sessionId: state.sessionId
+    });
+    state.generationHistory = Array.isArray(response.data?.items)
+      ? response.data.items
+      : [];
+    renderGenerationGallery();
+
+    if (!state.generationHistory.length) {
+      return;
+    }
+
+    const featuredCreation = state.generationHistory.find(
+      (creation) => creation.usageId === state.featuredUsageId
+    );
+
+    showCreationAsMainResult(featuredCreation || state.generationHistory[0]);
+  } catch (error) {
+    state.generationHistory = [];
+    state.featuredUsageId = "";
+    renderGenerationGallery();
+  }
 }
 
 function updateRemainingBadge(value) {
@@ -415,11 +586,14 @@ function applySession(payload) {
     fillSteps(payload.promptSteps);
   }
 
+  state.generationHistory = [];
+  state.featuredUsageId = "";
   persistSessionState();
   persistDraftState();
   setJoinLocked(true);
   stopSeatPolling();
   enableActivity();
+  renderGenerationGallery();
 }
 
 async function restoreSavedSession() {
@@ -456,6 +630,7 @@ async function restoreSavedSession() {
       sessionId: savedSession.sessionId
     });
     applySession(response.data);
+    await loadGenerationHistory();
     showStatus("good", "חזרתם למקום שלכם", response.data.message);
     await loadSeatMap();
   } catch (error) {
@@ -463,6 +638,7 @@ async function restoreSavedSession() {
     state.sessionId = "";
     state.seatNumber = 0;
     state.selectedSeatNumber = Number(savedSession.seatNumber || 0);
+    resetGalleryState();
     setJoinLocked(false);
     startSeatPolling();
 
@@ -518,6 +694,7 @@ joinForm.addEventListener("submit", async (event) => {
     });
 
     applySession(response.data);
+    await loadGenerationHistory();
     await loadSeatMap();
     showStatus("good", "נכנסתם בהצלחה", response.data.message);
   } catch (error) {
@@ -599,29 +776,22 @@ generateButton.addEventListener("click", async () => {
     }
 
     updateRemainingBadge(payload.remainingGenerations);
-    imagePreview.src = payload.imageDataUrl;
-    const filename = `funlab-seat-${String(state.seatNumber || "00").padStart(2, "0")}-${Date.now()}.png`;
+    const newCreation = {
+      usageId: payload.usageId || "",
+      generationIndex: state.generationHistory.length + 1,
+      createdAtMs: Date.now(),
+      imageDataUrl: payload.imageDataUrl,
+      imagePreviewUrl: payload.imageDownloadUrl || "",
+      imageStoragePath: payload.imageStoragePath || "",
+      finalPromptHebrew: payload.finalPromptHebrew || buildHebrewPromptPreview(currentSteps),
+      stepSnapshot: currentSteps
+    };
 
-    if (payload.usageId && payload.imageStoragePath) {
-      downloadImageButton.href = getDownloadGeneratedImageUrl(payload.usageId, filename);
-      downloadImageButton.dataset.downloadMode = "server";
-      downloadImageButton.removeAttribute("download");
-    } else {
-      downloadImageButton.href = payload.imageDataUrl;
-      downloadImageButton.dataset.downloadMode = "client";
-      downloadImageButton.setAttribute("download", filename);
-    }
-
-    downloadImageButton.hidden = false;
-    if (payload.imageStoragePath) {
-      savedImageNote.textContent = "התמונה נשמרה גם בענן. ההורדה עובדת דרך שרת האתר כדי לפעול טוב יותר בכל הדפדפנים.";
-      savedImageNote.hidden = false;
-    } else {
-      savedImageNote.textContent = "התמונה זמינה כרגע להורדה מהעמוד הזה. שמירה קבועה בשרת תופעל אחרי חיבור Firebase Storage.";
-      savedImageNote.hidden = false;
-    }
-    finalPromptOutput.textContent = buildHebrewPromptPreview(currentSteps);
-    resultCard.hidden = false;
+    state.generationHistory = [
+      newCreation,
+      ...state.generationHistory.filter((creation) => creation.usageId !== newCreation.usageId)
+    ];
+    showCreationAsMainResult(newCreation);
     persistDraftState();
     showStatus("good", "התמונה מוכנה", payload.message);
   } catch (error) {
@@ -732,6 +902,7 @@ leaveSeatButton.addEventListener("click", async () => {
   state.studentName = "";
   state.seatNumber = 0;
   state.selectedSeatNumber = 0;
+  resetGalleryState();
   updateSeatBadge();
   sessionBadge.textContent = "עדיין לא התחברתם";
   updateRemainingBadge(0);
