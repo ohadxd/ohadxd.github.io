@@ -332,6 +332,32 @@ function sanitizeTranslatedSteps(rawSteps) {
   return translatedSteps;
 }
 
+function buildPromptStepsHash(steps) {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        character: String(steps?.character || ""),
+        place: String(steps?.place || ""),
+        action: String(steps?.action || ""),
+        style: String(steps?.style || ""),
+        detail: String(steps?.detail || "")
+      })
+    )
+    .digest("hex");
+}
+
+function getCachedTranslatedSteps(sessionData, promptStepsHash) {
+  if (!sessionData || sessionData.promptTranslationHash !== promptStepsHash) {
+    return null;
+  }
+
+  try {
+    return sanitizeTranslatedSteps(sessionData.translatedPromptStepsEnglish || {});
+  } catch (error) {
+    return null;
+  }
+}
+
 async function translateStepsToEnglish(ai, steps) {
   const translationPrompt = [
     ACTIVITY_CONFIG.englishTranslationInstruction,
@@ -344,7 +370,7 @@ async function translateStepsToEnglish(ai, steps) {
       model: ACTIVITY_CONFIG.textModel,
       contents: translationPrompt,
       config: {
-        temperature: 0.1
+        temperature: 0
       }
     });
     const responseText = extractTextFromGeminiResponse(response);
@@ -527,9 +553,11 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
       style: "",
       detail: ""
     },
+    promptTranslationHash: "",
     seatNumber,
     status: "joined",
     studentName,
+    translatedPromptStepsEnglish: null,
     updatedAt: FieldValue.serverTimestamp()
   };
 
@@ -695,6 +723,8 @@ exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
   const seed = normalizeSeed(request.data?.seed);
   const validation = buildValidationResponse(steps);
   const draft = buildSessionDraft(steps, validation);
+  const promptStepsHash = buildPromptStepsHash(steps);
+  const cachedTranslatedSteps = getCachedTranslatedSteps(sessionData, promptStepsHash);
 
   await sessionRef.set(
     {
@@ -702,7 +732,9 @@ exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
       classCode: sessionData.classCode,
       currentSeed: seed,
       lastSeenAt: FieldValue.serverTimestamp(),
+      promptTranslationHash: cachedTranslatedSteps ? promptStepsHash : "",
       status: validation.isComplete ? "ready" : "building",
+      translatedPromptStepsEnglish: cachedTranslatedSteps,
       updatedAt: FieldValue.serverTimestamp()
     },
     { merge: true }
@@ -737,13 +769,16 @@ exports.generateImage = onCall(
     const steps = sanitizePromptSteps(request.data?.steps || sessionData.promptSteps);
     const seed = normalizeSeed(request.data?.seed ?? sessionData.currentSeed);
     const validation = buildValidationResponse(steps);
+    const promptStepsHash = buildPromptStepsHash(steps);
 
     if (!validation.isComplete) {
     await sessionRef.set(
       {
         ...buildSessionDraft(steps, validation),
         lastSeenAt: FieldValue.serverTimestamp(),
+        promptTranslationHash: "",
         status: "building",
+          translatedPromptStepsEnglish: null,
           updatedAt: FieldValue.serverTimestamp()
         },
         { merge: true }
@@ -789,12 +824,16 @@ exports.generateImage = onCall(
     const ai = new GoogleGenAI({ apiKey });
     let finalPromptHebrew;
     let finalPromptEnglish;
+    let translatedPromptStepsEnglish;
     let image;
 
     try {
       finalPromptHebrew = buildFinalHebrewPrompt(steps);
+      translatedPromptStepsEnglish =
+        getCachedTranslatedSteps(sessionData, promptStepsHash) ||
+        await translateStepsToEnglish(ai, steps);
       finalPromptEnglish = buildFinalEnglishPrompt(
-        await translateStepsToEnglish(ai, steps),
+        translatedPromptStepsEnglish,
         ACTIVITY_CONFIG.imagePromptGuardrailsEnglish
       );
       image = await generateImageWithGemini(ai, finalPromptEnglish, seed);
@@ -837,7 +876,9 @@ exports.generateImage = onCall(
         currentSeed: seed,
         lastUsedSeed: seed,
         lastSeenAt: FieldValue.serverTimestamp(),
+        promptTranslationHash: promptStepsHash,
         status: "generated",
+        translatedPromptStepsEnglish,
         updatedAt: FieldValue.serverTimestamp()
       },
       { merge: true }
