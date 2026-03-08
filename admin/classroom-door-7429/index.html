@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Funlab | ניהול כיתות</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="/css/style.css?v=20260308-admin-1" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="title">
+          <div class="badge"><span class="dot"></span> איזור ניהול סודי</div>
+          <h1>ניהול כיתות</h1>
+          <p class="subtitle">פתיחה וסגירה של קודי כיתה, שינוי מגבלות, ויצירת כיתות חדשות.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid single-col">
+      <section class="card">
+        <h2><span class="icon">🔐</span> התחברות מנהל</h2>
+        <form id="adminLoginForm" class="form-grid">
+          <div class="field">
+            <label for="adminUsername">שם משתמש</label>
+            <input id="adminUsername" class="input" type="text" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label for="adminPassword">סיסמה</label>
+            <input id="adminPassword" class="input" type="password" autocomplete="current-password" />
+          </div>
+          <div class="action-row">
+            <button id="adminLoginButton" class="btn-primary" type="submit">כניסה</button>
+            <button id="adminLogoutButton" class="btn-ghost" type="button" hidden>התנתקות</button>
+            <span id="adminSessionBadge" class="pill">לא מחוברים</span>
+          </div>
+        </form>
+      </section>
+
+      <section id="adminStatusCard" class="card" hidden>
+        <h2><span class="icon">📣</span> מצב</h2>
+        <div id="adminStatusBox" class="callout warn">
+          <div class="row">
+            <div class="badge2">i</div>
+            <div class="status-copy">
+              <strong id="adminStatusTitle">מוכנים</strong>
+              <div id="adminStatusText">התחברו כדי לנהל את הכיתות.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="adminControlsCard" class="card" hidden>
+        <h2><span class="icon">🛠️</span> יצירת כיתה חדשה</h2>
+        <form id="createClassForm" class="builder-grid">
+          <div class="field">
+            <label for="newClassCode">קוד כיתה</label>
+            <input id="newClassCode" class="input" type="text" placeholder="למשל: FUNLAB600" />
+          </div>
+          <div class="field">
+            <label for="newClassLabel">תיאור</label>
+            <input id="newClassLabel" class="input" type="text" placeholder="למשל: קבוצת בוקר" />
+          </div>
+          <div class="field">
+            <label for="newClassSeats">מספר מקומות</label>
+            <input id="newClassSeats" class="input" type="number" min="1" max="60" value="25" />
+          </div>
+          <div class="field">
+            <label for="newClassLimit">יצירות לכל תלמיד</label>
+            <input id="newClassLimit" class="input" type="number" min="1" max="20" value="6" />
+          </div>
+          <div class="action-row field-full">
+            <button id="createClassButton" class="btn-secondary" type="submit">יצירת קוד כיתה</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="classListCard" class="card" hidden>
+        <div class="seat-picker-head">
+          <h2><span class="icon">🏫</span> כל הכיתות</h2>
+          <button id="refreshAdminClassesButton" class="btn-ghost btn-small" type="button">רענון</button>
+        </div>
+        <div id="adminClassGrid" class="admin-class-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/js/admin-console.js?v=20260308-admin-1"></script>
+</body>
+</html>

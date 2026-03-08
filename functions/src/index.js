@@ -28,6 +28,8 @@ const db = admin.firestore();
 const storage = admin.storage();
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 const PROMPT_LAB_WEB_API_KEY = defineSecret("PROMPT_LAB_WEB_API_KEY");
+const ADMIN_USERNAME = defineSecret("ADMIN_USERNAME");
+const ADMIN_PASSWORD = defineSecret("ADMIN_PASSWORD");
 
 function getCallableOptions(extra = {}) {
   return {
@@ -62,6 +64,101 @@ function assertStringValue(value, code, message) {
   if (typeof value !== "string" || !value.trim()) {
     throw new HttpsError(code, message);
   }
+}
+
+function getSecretOrThrow(secretRef, message) {
+  const value = normalizeSecretValue(secretRef.value());
+
+  if (!value) {
+    throw new HttpsError("failed-precondition", message);
+  }
+
+  return value;
+}
+
+function normalizeAdminUsername(value) {
+  return String(value || "").trim().toLowerCase().slice(0, 64);
+}
+
+function buildAdminSessionExpiry(date = new Date()) {
+  return Timestamp.fromDate(new Date(date.getTime() + 8 * 60 * 60 * 1000));
+}
+
+async function requireAdminSession(sessionToken) {
+  assertStringValue(sessionToken, "permission-denied", "חסר טוקן ניהול.");
+
+  const adminSessionRef = db.collection("adminSessions").doc(sessionToken.trim());
+  const adminSessionSnapshot = await adminSessionRef.get();
+
+  if (!adminSessionSnapshot.exists) {
+    throw new HttpsError("permission-denied", "סשן הניהול לא תקף. התחברו מחדש.");
+  }
+
+  const adminSession = adminSessionSnapshot.data() || {};
+  const expiresAt = adminSession.expiresAt instanceof Timestamp
+    ? adminSession.expiresAt.toDate()
+    : null;
+
+  if (!expiresAt || expiresAt.getTime() <= Date.now()) {
+    await adminSessionRef.delete().catch(() => {});
+    throw new HttpsError("permission-denied", "סשן הניהול פג. התחברו מחדש.");
+  }
+
+  await adminSessionRef.set(
+    {
+      lastSeenAt: FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  return {
+    adminSessionRef,
+    adminSession
+  };
+}
+
+function serializeClassAccessCode(classDoc) {
+  const data = classDoc.data() || {};
+
+  return {
+    code: classDoc.id,
+    label: String(data.label || "").trim(),
+    isActive: data.isActive !== false,
+    activitySlug: String(data.activitySlug || ACTIVITY_CONFIG.activitySlug).trim() || ACTIVITY_CONFIG.activitySlug,
+    seatCount: getSeatCount(data),
+    allowedGenerationsPerStudent: getGenerationLimit(data),
+    totalGenerations: Number(data.totalGenerations || 0),
+    totalSessions: Number(data.totalSessions || 0),
+    participantsCount: Number(data.participantsCount || 0),
+    expiresAtMs: data.expiresAt instanceof Timestamp ? data.expiresAt.toMillis() : 0
+  };
+}
+
+function sanitizeClassAdminPayload(rawData = {}) {
+  const code = normalizeClassCode(rawData.classCode);
+  const label = String(rawData.label || "").trim().slice(0, 80);
+  const seatCount = Number(rawData.seatCount);
+  const allowedGenerationsPerStudent = Number(rawData.allowedGenerationsPerStudent);
+
+  if (!code) {
+    throw new HttpsError("invalid-argument", "יש להזין קוד כיתה תקין.");
+  }
+
+  return {
+    classCode: code,
+    label: label || code,
+    isActive: rawData.isActive !== false,
+    seatCount:
+      Number.isInteger(seatCount) && seatCount >= 1 && seatCount <= 60
+        ? seatCount
+        : ACTIVITY_CONFIG.defaultSeatCount,
+    allowedGenerationsPerStudent:
+      Number.isInteger(allowedGenerationsPerStudent) &&
+      allowedGenerationsPerStudent >= 1 &&
+      allowedGenerationsPerStudent <= 20
+        ? allowedGenerationsPerStudent
+        : ACTIVITY_CONFIG.defaultGenerationsPerStudent
+  };
 }
 
 async function loadClassAccessCode(classCode) {
@@ -503,6 +600,124 @@ async function loadStudentCreations(sessionId) {
       return right.generationIndex - left.generationIndex;
     });
 }
+
+exports.adminLogin = onCall(
+  getCallableOptions({
+    secrets: [ADMIN_USERNAME, ADMIN_PASSWORD]
+  }),
+  async (request) => {
+    const username = normalizeAdminUsername(request.data?.username);
+    const password = String(request.data?.password || "");
+    const expectedUsername = normalizeAdminUsername(
+      getSecretOrThrow(ADMIN_USERNAME, "סוד ADMIN_USERNAME לא הוגדר.")
+    );
+    const expectedPassword = getSecretOrThrow(
+      ADMIN_PASSWORD,
+      "סוד ADMIN_PASSWORD לא הוגדר."
+    );
+
+    if (username !== expectedUsername || password !== expectedPassword) {
+      throw new HttpsError("permission-denied", "שם המשתמש או הסיסמה שגויים.");
+    }
+
+    const sessionToken = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+
+    await db.collection("adminSessions").doc(sessionToken).set({
+      createdAt: FieldValue.serverTimestamp(),
+      expiresAt: buildAdminSessionExpiry(),
+      lastSeenAt: FieldValue.serverTimestamp(),
+      username: expectedUsername
+    });
+
+    return {
+      ok: true,
+      sessionToken,
+      username: expectedUsername,
+      expiresAtMs: Date.now() + 8 * 60 * 60 * 1000
+    };
+  }
+);
+
+exports.adminLogout = onCall(getCallableOptions(), async (request) => {
+  const sessionToken = String(request.data?.sessionToken || "").trim();
+
+  if (sessionToken) {
+    await db.collection("adminSessions").doc(sessionToken).delete().catch(() => {});
+  }
+
+  return {
+    ok: true
+  };
+});
+
+exports.adminListClasses = onCall(getCallableOptions(), async (request) => {
+  await requireAdminSession(request.data?.sessionToken);
+  const snapshot = await db.collection("classAccessCodes").get();
+  const items = snapshot.docs
+    .map((classDoc) => serializeClassAccessCode(classDoc))
+    .sort((left, right) => left.code.localeCompare(right.code, "en"));
+
+  return {
+    ok: true,
+    items
+  };
+});
+
+exports.adminUpsertClass = onCall(getCallableOptions(), async (request) => {
+  await requireAdminSession(request.data?.sessionToken);
+  const payload = sanitizeClassAdminPayload(request.data);
+  const classRef = db.collection("classAccessCodes").doc(payload.classCode);
+
+  await classRef.set(
+    {
+      activitySlug: ACTIVITY_CONFIG.activitySlug,
+      allowedGenerationsPerStudent: payload.allowedGenerationsPerStudent,
+      isActive: payload.isActive,
+      label: payload.label,
+      seatCount: payload.seatCount,
+      updatedAt: FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  const classSnapshot = await classRef.get();
+
+  return {
+    ok: true,
+    item: serializeClassAccessCode(classSnapshot)
+  };
+});
+
+exports.adminSetClassActive = onCall(getCallableOptions(), async (request) => {
+  await requireAdminSession(request.data?.sessionToken);
+  const classCode = normalizeClassCode(request.data?.classCode);
+
+  if (!classCode) {
+    throw new HttpsError("invalid-argument", "יש להזין קוד כיתה תקין.");
+  }
+
+  const classRef = db.collection("classAccessCodes").doc(classCode);
+  const classSnapshot = await classRef.get();
+
+  if (!classSnapshot.exists) {
+    throw new HttpsError("not-found", "קוד הכיתה לא נמצא.");
+  }
+
+  await classRef.set(
+    {
+      isActive: request.data?.isActive !== false,
+      updatedAt: FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  const updatedSnapshot = await classRef.get();
+
+  return {
+    ok: true,
+    item: serializeClassAccessCode(updatedSnapshot)
+  };
+});
 
 exports.getSeatMap = onCall(
   getCallableOptions({

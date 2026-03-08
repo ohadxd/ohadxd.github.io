@@ -1246,3 +1246,26 @@ figure,
   padding: 8px 12px;
   font-size: 14px;
 }
+
+.admin-class-grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 14px;
+}
+
+.admin-class-card{
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid #d8e8f8;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  box-shadow: 0 8px 18px rgba(41,79,138,0.08);
+}
+
+.admin-class-stats{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

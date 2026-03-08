@@ -139,3 +139,23 @@ export function validatePromptStepsCallable(data) {
 export function generateImageCallable(data) {
   return callFunction("generateImage", data);
 }
+
+export function adminLoginCallable(data) {
+  return callFunction("adminLogin", data);
+}
+
+export function adminLogoutCallable(data) {
+  return callFunction("adminLogout", data);
+}
+
+export function adminListClassesCallable(data) {
+  return callFunction("adminListClasses", data);
+}
+
+export function adminUpsertClassCallable(data) {
+  return callFunction("adminUpsertClass", data);
+}
+
+export function adminSetClassActiveCallable(data) {
+  return callFunction("adminSetClassActive", data);
+}
