@@ -92,6 +92,17 @@ const ACTIVITY_CONFIG = {
     "Keep each value short, vivid, and suitable for an image model.",
     "Do not add explanations, markdown, numbering, or extra keys.",
     "Do not leave Hebrew text in the output."
+  ].join(" "),
+  imagePromptGuardrailsEnglish: [
+    "Child-safe and classroom-friendly.",
+    "Clear anatomy.",
+    "No extra limbs.",
+    "No extra fingers.",
+    "No duplicated body parts.",
+    "No deformed hands.",
+    "No cropped face.",
+    "No text, letters, watermark, or logo unless requested.",
+    "Clear subject separation and coherent composition."
   ].join(" ")
 };
 

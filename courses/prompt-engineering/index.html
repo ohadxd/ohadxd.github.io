@@ -28,7 +28,7 @@
     "about": "Prompt Engineering for Children"
   }
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=20260308-gallery-1" />
+  <link rel="stylesheet" href="/css/style.css?v=20260308-seed-1" />
 </head>
 <body>
   <div class="wrap">
@@ -148,7 +148,7 @@
             <div class="field-help">מה הדמות עושה ממש עכשיו?</div>
             <div class="example-title">רעיונות מהירים</div>
             <div class="example-grid" aria-label="רעיונות מהירים לפעולה">
-              <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מחזיר לילד בלון שעף">מחזיר בלון</button>
+              <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מחזיק בלון צבעוני ביד ומחייך">מחזיק בלון</button>
               <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מגלה אוצר קטן ומחייך">מגלה אוצר</button>
               <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="עוזר לחבר לעבור גשר">עוזר לחבר</button>
               <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מטיס עפיפון גדול בשמיים">מטיס עפיפון</button>
@@ -177,6 +177,11 @@
               <button class="example-chip" type="button" data-fill-target="stepDetail" data-fill-value="שביל קטן של ניצוצות זהובים">שביל ניצוצות</button>
               <button class="example-chip" type="button" data-fill-target="stepDetail" data-fill-value="בלון בצורת לב שמרחף ליד הדמות">בלון בצורת לב</button>
             </div>
+          </div>
+          <div class="field field-full">
+            <label for="seedInput">זרע קבוע לתמונה (Seed)</label>
+            <input id="seedInput" class="input" type="number" min="0" max="2147483647" inputmode="numeric" placeholder="למשל: 42" />
+            <div class="field-help">אם משתמשים באותו רעיון עם אותו seed, לפעמים מקבלים תוצאה דומה יותר. נסו לשנות רק את ה-seed ולראות מה קורה.</div>
           </div>
         </div>
 
@@ -231,6 +236,6 @@
     </footer>
   </div>
 
-  <script type="module" src="/js/prompt-lab.js?v=20260308-gallery-1"></script>
+  <script type="module" src="/js/prompt-lab.js?v=20260308-seed-1"></script>
 </body>
 </html>

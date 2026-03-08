@@ -9,7 +9,7 @@ import {
   setRealtimeClientConfig,
   subscribeSeatMap,
   validatePromptStepsCallable
-} from "/js/functions-client.js?v=20260308-gallery-1";
+} from "/js/functions-client.js?v=20260308-seed-1";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
@@ -43,6 +43,7 @@ const savedImageNote = document.getElementById("savedImageNote");
 const finalPromptOutput = document.getElementById("finalPromptOutput");
 const classCodeInput = document.getElementById("classCode");
 const studentNameInput = document.getElementById("studentName");
+const seedInput = document.getElementById("seedInput");
 const stepInputs = Array.from(document.querySelectorAll("[data-step-key]"));
 const exampleButtons = Array.from(document.querySelectorAll("[data-fill-target]"));
 
@@ -67,7 +68,8 @@ const state = {
   seatPollTimer: null,
   publicSeatMapId: "",
   seatRealtimeUnsubscribe: null,
-  featuredUsageId: ""
+  featuredUsageId: "",
+  currentSeed: null
 };
 
 function normalizeClassCode(value) {
@@ -93,6 +95,20 @@ function buildHebrewPromptPreview(steps) {
     `סגנון חזותי: ${steps.style || "-"}`,
     `פרט מיוחד: ${steps.detail || "-"}`
   ].join("\n");
+}
+
+function normalizeSeed(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numericSeed = Number(value);
+
+  if (!Number.isInteger(numericSeed) || numericSeed < 0 || numericSeed > 2147483647) {
+    return null;
+  }
+
+  return numericSeed;
 }
 
 function buildCreationFilename(creation) {
@@ -177,6 +193,7 @@ function persistDraftState() {
   writeStorage(STORAGE_DRAFT_KEY, {
     classCode,
     seatNumber: state.selectedSeatNumber || state.seatNumber || 0,
+    seed: normalizeSeed(seedInput.value),
     steps: collectSteps()
   });
 }
@@ -251,6 +268,9 @@ function showCreationAsMainResult(creation) {
   savedImageNote.textContent = creation.imageStoragePath
     ? "התמונה נשמרה בענן ותישאר זמינה גם אחרי רענון."
     : "התמונה זמינה כרגע מהעמוד הזה.";
+  if (Number.isInteger(creation.seed)) {
+    savedImageNote.textContent += ` seed: ${creation.seed}.`;
+  }
   savedImageNote.hidden = false;
   finalPromptOutput.textContent = buildCreationSummary(creation);
   resultCard.hidden = false;
@@ -301,6 +321,9 @@ function renderGenerationGallery() {
           minute: "2-digit"
         })
       : "נשמרה עכשיו";
+    if (Number.isInteger(creation.seed)) {
+      meta.textContent += ` | seed ${creation.seed}`;
+    }
     preview.src = getCreationPreviewUrl(creation);
     preview.alt = `תצוגה מקדימה של יצירה ${creation.generationIndex || ""}`;
     copy.textContent = buildCreationSummary(creation);
@@ -586,6 +609,9 @@ function applySession(payload) {
     fillSteps(payload.promptSteps);
   }
 
+  state.currentSeed = normalizeSeed(payload.seed);
+  seedInput.value = Number.isInteger(state.currentSeed) ? String(state.currentSeed) : "";
+
   state.generationHistory = [];
   state.featuredUsageId = "";
   persistSessionState();
@@ -608,6 +634,11 @@ async function restoreSavedSession() {
 
   if (savedSession?.studentName) {
     studentNameInput.value = savedSession.studentName;
+  }
+
+  if (savedDraft && Object.prototype.hasOwnProperty.call(savedDraft, "seed")) {
+    const savedSeed = normalizeSeed(savedDraft.seed);
+    seedInput.value = Number.isInteger(savedSeed) ? String(savedSeed) : "";
   }
 
   if (savedSession?.seatNumber) {
@@ -667,7 +698,8 @@ function scheduleSilentDraftSave() {
     try {
       await validatePromptStepsCallable({
         sessionId: state.sessionId,
-        steps: collectSteps()
+        steps: collectSteps(),
+        seed: normalizeSeed(seedInput.value)
       });
     } catch (error) {
       // Ignore autosave failures and let the manual flow continue.
@@ -726,7 +758,8 @@ validateButton.addEventListener("click", async () => {
   try {
     const response = await validatePromptStepsCallable({
       sessionId: state.sessionId,
-      steps: collectSteps()
+      steps: collectSteps(),
+      seed: normalizeSeed(seedInput.value)
     });
     const payload = response.data;
 
@@ -761,7 +794,8 @@ generateButton.addEventListener("click", async () => {
     const currentSteps = collectSteps();
     const response = await generateImageCallable({
       sessionId: state.sessionId,
-      steps: currentSteps
+      steps: currentSteps,
+      seed: normalizeSeed(seedInput.value)
     });
     const payload = response.data;
 
@@ -784,6 +818,7 @@ generateButton.addEventListener("click", async () => {
       imagePreviewUrl: payload.imageDownloadUrl || "",
       imageStoragePath: payload.imageStoragePath || "",
       finalPromptHebrew: payload.finalPromptHebrew || buildHebrewPromptPreview(currentSteps),
+      seed: normalizeSeed(payload.seed),
       stepSnapshot: currentSteps
     };
 
@@ -836,6 +871,8 @@ clearButton.addEventListener("click", () => {
 for (const input of stepInputs) {
   input.addEventListener("input", scheduleSilentDraftSave);
 }
+
+seedInput.addEventListener("input", scheduleSilentDraftSave);
 
 for (const button of exampleButtons) {
   button.addEventListener("click", () => {
@@ -913,6 +950,7 @@ leaveSeatButton.addEventListener("click", async () => {
   removeStorage(STORAGE_SESSION_KEY);
   removeStorage(STORAGE_DRAFT_KEY);
   fillSteps(emptySteps);
+  seedInput.value = "";
   showStatus("good", "קמתם מהמקום", "המקום שוחרר. אפשר לבחור מקום חדש בלוח.");
   startSeatPolling();
   void loadSeatMap();

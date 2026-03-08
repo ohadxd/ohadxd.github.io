@@ -15,6 +15,7 @@ const {
   buildValidationResponse,
   containsHebrew,
   normalizeClassCode,
+  normalizeSeed,
   sanitizePromptSteps,
   sanitizeStudentName
 } = require("./lib/promptFlow");
@@ -248,13 +249,19 @@ async function publishPublicSeatMap(seatMapPayload) {
   );
 }
 
-async function generateImageWithGemini(ai, finalPromptText) {
+async function generateImageWithGemini(ai, finalPromptText, seed) {
+  const config = {
+    responseModalities: ["TEXT", "IMAGE"]
+  };
+
+  if (Number.isInteger(seed)) {
+    config.seed = seed;
+  }
+
   const response = await ai.models.generateContent({
     model: ACTIVITY_CONFIG.imageModel,
     contents: finalPromptText,
-    config: {
-      responseModalities: ["TEXT", "IMAGE"]
-    }
+    config
   });
 
   for (const candidate of response.candidates || []) {
@@ -443,6 +450,7 @@ function buildCreationHistoryItem(usageDoc) {
     imageStoragePath: String(usageData.imageStoragePath || "").trim(),
     finalPromptEnglish: String(usageData.finalPromptEnglish || "").trim(),
     finalPromptHebrew: String(usageData.finalPromptHebrew || "").trim(),
+    seed: normalizeSeed(usageData.seed),
     stepSnapshot: usageData.stepSnapshot || {
       character: "",
       place: "",
@@ -505,6 +513,7 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
     classCode: normalizedCode,
     classLabel: classData.label || "",
     createdAt: FieldValue.serverTimestamp(),
+    currentSeed: null,
     generationsCount: 0,
     generationLimit,
     isPromptComplete: false,
@@ -626,6 +635,7 @@ exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
         Number(sessionData.generationsCount || 0),
       0
     ),
+    seed: normalizeSeed(sessionData.currentSeed),
     promptSteps: sessionData.promptSteps || {
       character: "",
       place: "",
@@ -682,6 +692,7 @@ exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
   const { classRef } = await loadClassAccessCode(sessionData.classCode);
   const steps = sanitizePromptSteps(request.data?.steps);
+  const seed = normalizeSeed(request.data?.seed);
   const validation = buildValidationResponse(steps);
   const draft = buildSessionDraft(steps, validation);
 
@@ -689,6 +700,7 @@ exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
     {
       ...draft,
       classCode: sessionData.classCode,
+      currentSeed: seed,
       lastSeenAt: FieldValue.serverTimestamp(),
       status: validation.isComplete ? "ready" : "building",
       updatedAt: FieldValue.serverTimestamp()
@@ -723,6 +735,7 @@ exports.generateImage = onCall(
       sessionData.classCode
     );
     const steps = sanitizePromptSteps(request.data?.steps || sessionData.promptSteps);
+    const seed = normalizeSeed(request.data?.seed ?? sessionData.currentSeed);
     const validation = buildValidationResponse(steps);
 
     if (!validation.isComplete) {
@@ -780,8 +793,11 @@ exports.generateImage = onCall(
 
     try {
       finalPromptHebrew = buildFinalHebrewPrompt(steps);
-      finalPromptEnglish = buildFinalEnglishPrompt(await translateStepsToEnglish(ai, steps));
-      image = await generateImageWithGemini(ai, finalPromptEnglish);
+      finalPromptEnglish = buildFinalEnglishPrompt(
+        await translateStepsToEnglish(ai, steps),
+        ACTIVITY_CONFIG.imagePromptGuardrailsEnglish
+      );
+      image = await generateImageWithGemini(ai, finalPromptEnglish, seed);
     } catch (error) {
       logger.error("Failed to generate an image from validated prompt steps", error);
       throw new HttpsError(
@@ -818,6 +834,8 @@ exports.generateImage = onCall(
         lastGeneratedImageUrl: storedImage.imageDownloadUrl || "",
         lastGeneratedPromptEnglish: finalPromptEnglish,
         lastGeneratedPrompt: finalPromptHebrew,
+        currentSeed: seed,
+        lastUsedSeed: seed,
         lastSeenAt: FieldValue.serverTimestamp(),
         status: "generated",
         updatedAt: FieldValue.serverTimestamp()
@@ -849,6 +867,7 @@ exports.generateImage = onCall(
       imageMimeType: image.mimeType,
       imageStoragePath: storedImage.imageStoragePath || "",
       model: ACTIVITY_CONFIG.imageModel,
+      seed,
       sessionId: sessionRef.id,
       stepSnapshot: steps,
       studentName: sessionData.studentName || "תלמיד/ה"
@@ -863,6 +882,7 @@ exports.generateImage = onCall(
       finalPromptEnglish,
       finalPromptHebrew,
       remainingGenerations: Math.max(generationLimit - newGenerationCount, 0),
+      seed,
       usageId: usageRef.id,
       message: ACTIVITY_CONFIG.generationSuccess
     };

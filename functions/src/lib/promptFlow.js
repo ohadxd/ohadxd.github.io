@@ -84,6 +84,20 @@ function containsHebrew(value) {
   return /[\u0590-\u05FF]/.test(String(value || ""));
 }
 
+function normalizeSeed(seedValue) {
+  if (seedValue === null || seedValue === undefined || seedValue === "") {
+    return null;
+  }
+
+  const numericSeed = Number(seedValue);
+
+  if (!Number.isInteger(numericSeed) || numericSeed < 0 || numericSeed > 2147483647) {
+    return null;
+  }
+
+  return numericSeed;
+}
+
 function buildFinalHebrewPrompt(steps) {
   const character = sanitizePromptField(steps.character);
   const place = sanitizePromptField(steps.place);
@@ -101,14 +115,15 @@ function buildFinalHebrewPrompt(steps) {
   ].join(" ");
 }
 
-function buildFinalEnglishPrompt(steps) {
+function buildFinalEnglishPrompt(steps, guardrails = "") {
   const character = sanitizeEnglishPromptField(steps.character);
   const place = sanitizeEnglishPromptField(steps.place);
   const action = sanitizeEnglishPromptField(steps.action);
   const style = sanitizeEnglishPromptField(steps.style);
   const detail = sanitizeEnglishPromptField(steps.detail);
+  const promptGuardrails = sanitizeEnglishPromptField(guardrails);
 
-  return [
+  const parts = [
     "Create a child-friendly image.",
     `Main subject: ${character}.`,
     `Setting: ${place}.`,
@@ -116,7 +131,13 @@ function buildFinalEnglishPrompt(steps) {
     `Visual style: ${style}.`,
     `Special detail: ${detail}.`,
     "High quality, clear composition, expressive lighting, rich detail."
-  ].join(" ");
+  ];
+
+  if (promptGuardrails) {
+    parts.push(`Quality guardrails: ${promptGuardrails}.`);
+  }
+
+  return parts.join(" ");
 }
 
 function buildSessionDraft(steps, validation) {
@@ -136,6 +157,7 @@ module.exports = {
   buildValidationResponse,
   containsHebrew,
   normalizeClassCode,
+  normalizeSeed,
   sanitizePromptSteps,
   sanitizeStudentName
 };
