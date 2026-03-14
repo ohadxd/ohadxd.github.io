@@ -46,6 +46,8 @@ const ACTIVITY_CONFIG = {
   region: "europe-west1",
   imageModel: "gemini-2.5-flash-image",
   textModel: "gemini-2.5-flash",
+  adminConfigCollection: "adminConfig",
+  adminConfigDocId: "promptLab",
   firebaseWebApp: {
     appId: "1:56393078768:web:0f6c29d78a6dcdb4516f35",
     authDomain: "groovetech-9a3fb.firebaseapp.com",
@@ -86,6 +88,36 @@ const ACTIVITY_CONFIG = {
     "לא הצלחתי לשחזר את המקום שלכם. בחרו שוב מקום פנוי.",
   childSafeTone:
     "דברו בעברית פשוטה, קצרה ומעודדת שמתאימה לתלמידי כיתות ה-ו.",
+  supportedProviders: [
+    { value: "gemini", label: "Gemini" },
+    { value: "openai", label: "OpenAI" }
+  ],
+  providerModelCatalog: {
+    gemini: [
+      { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" },
+      { value: "imagen-4.0-generate-001", label: "Imagen 4" }
+    ],
+    openai: [
+      { value: "gpt-image-1.5", label: "GPT Image 1.5" },
+      { value: "gpt-image-1", label: "GPT Image 1" },
+      { value: "gpt-image-1-mini", label: "GPT Image 1 Mini" }
+    ]
+  },
+  adminPromptLabDefaults: {
+    activeProvider: "gemini",
+    geminiImageModel: "gemini-2.5-flash-image",
+    geminiAspectRatio: "1:1",
+    geminiImageSize: "1K",
+    geminiGuidanceScale: 5,
+    openAiImageModel: "gpt-image-1.5",
+    openAiImageQuality: "medium",
+    openAiImageSize: "1024x1024",
+    googleBillingProjectId: "groovetech-9a3fb",
+    googleBillingLocation: "US",
+    googleBillingDataset: "",
+    googleBillingTable: "",
+    spendLookbackDays: 14
+  },
   englishTranslationInstruction: [
     "Translate the student's five prompt-building steps from Hebrew into natural, child-safe English.",
     "Return valid JSON only with exactly these keys: character, place, action, style, detail.",
@@ -103,7 +135,17 @@ const ACTIVITY_CONFIG = {
     "No cropped face.",
     "No text, letters, watermark, or logo unless requested.",
     "Clear subject separation and coherent composition."
-  ].join(" ")
+  ].join(" "),
+  imageNegativePromptEnglish: [
+    "extra limbs",
+    "extra fingers",
+    "duplicated body parts",
+    "deformed hands",
+    "cropped face",
+    "unreadable text",
+    "watermark",
+    "logo"
+  ].join(", ")
 };
 
 module.exports = {

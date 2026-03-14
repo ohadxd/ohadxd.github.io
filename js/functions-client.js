@@ -159,3 +159,15 @@ export function adminUpsertClassCallable(data) {
 export function adminSetClassActiveCallable(data) {
   return callFunction("adminSetClassActive", data);
 }
+
+export function adminGetPromptLabSettingsCallable(data) {
+  return callFunction("adminGetPromptLabSettings", data);
+}
+
+export function adminSavePromptLabSettingsCallable(data) {
+  return callFunction("adminSavePromptLabSettings", data);
+}
+
+export function adminGetSpendReportCallable(data) {
+  return callFunction("adminGetSpendReport", data);
+}

@@ -2,6 +2,7 @@
 
 const admin = require("firebase-admin");
 const { randomUUID, createHash } = require("node:crypto");
+const { BigQuery } = require("@google-cloud/bigquery");
 const { GoogleGenAI } = require("@google/genai");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
@@ -26,7 +27,9 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 const storage = admin.storage();
+const bigquery = new BigQuery();
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
 const PROMPT_LAB_WEB_API_KEY = defineSecret("PROMPT_LAB_WEB_API_KEY");
 const ADMIN_USERNAME = defineSecret("ADMIN_USERNAME");
 const ADMIN_PASSWORD = defineSecret("ADMIN_PASSWORD");
@@ -35,6 +38,110 @@ function getCallableOptions(extra = {}) {
   return {
     region: ACTIVITY_CONFIG.region,
     ...extra
+  };
+}
+
+function getAdminConfigRef() {
+  return db
+    .collection(ACTIVITY_CONFIG.adminConfigCollection)
+    .doc(ACTIVITY_CONFIG.adminConfigDocId);
+}
+
+function getAllowedProviderValues() {
+  return new Set(ACTIVITY_CONFIG.supportedProviders.map((item) => item.value));
+}
+
+function getAllowedModelValues(provider) {
+  return new Set((ACTIVITY_CONFIG.providerModelCatalog[provider] || []).map((item) => item.value));
+}
+
+function sanitizePromptLabAdminConfig(rawData = {}) {
+  const defaults = ACTIVITY_CONFIG.adminPromptLabDefaults;
+  const allowedProviders = getAllowedProviderValues();
+  const activeProvider = allowedProviders.has(String(rawData.activeProvider || "").trim())
+    ? String(rawData.activeProvider).trim()
+    : defaults.activeProvider;
+  const geminiModelValue = String(rawData.geminiImageModel || "").trim();
+  const openAiModelValue = String(rawData.openAiImageModel || "").trim();
+  const allowedGeminiModels = getAllowedModelValues("gemini");
+  const allowedOpenAiModels = getAllowedModelValues("openai");
+  const geminiGuidanceScale = Number(rawData.geminiGuidanceScale);
+  const spendLookbackDays = Number(rawData.spendLookbackDays);
+  const allowedGeminiAspectRatios = new Set(["1:1", "3:4", "4:3", "9:16", "16:9"]);
+  const allowedGeminiImageSizes = new Set(["1K", "2K"]);
+  const allowedOpenAiQualities = new Set(["low", "medium", "high", "auto"]);
+  const allowedOpenAiSizes = new Set(["1024x1024", "1536x1024", "1024x1536", "auto"]);
+  const allowedBillingLocations = new Set(["US", "EU", "us", "eu"]);
+
+  return {
+    activeProvider,
+    geminiImageModel: allowedGeminiModels.has(geminiModelValue)
+      ? geminiModelValue
+      : defaults.geminiImageModel,
+    geminiAspectRatio: allowedGeminiAspectRatios.has(String(rawData.geminiAspectRatio || "").trim())
+      ? String(rawData.geminiAspectRatio).trim()
+      : defaults.geminiAspectRatio,
+    geminiImageSize: allowedGeminiImageSizes.has(String(rawData.geminiImageSize || "").trim())
+      ? String(rawData.geminiImageSize).trim()
+      : defaults.geminiImageSize,
+    geminiGuidanceScale:
+      Number.isFinite(geminiGuidanceScale) && geminiGuidanceScale >= 1 && geminiGuidanceScale <= 20
+        ? Number(geminiGuidanceScale.toFixed(1))
+        : defaults.geminiGuidanceScale,
+    openAiImageModel: allowedOpenAiModels.has(openAiModelValue)
+      ? openAiModelValue
+      : defaults.openAiImageModel,
+    openAiImageQuality: allowedOpenAiQualities.has(String(rawData.openAiImageQuality || "").trim())
+      ? String(rawData.openAiImageQuality).trim()
+      : defaults.openAiImageQuality,
+    openAiImageSize: allowedOpenAiSizes.has(String(rawData.openAiImageSize || "").trim())
+      ? String(rawData.openAiImageSize).trim()
+      : defaults.openAiImageSize,
+    googleBillingProjectId: String(rawData.googleBillingProjectId || "").trim().slice(0, 80),
+    googleBillingLocation: allowedBillingLocations.has(String(rawData.googleBillingLocation || "").trim())
+      ? String(rawData.googleBillingLocation).trim().toUpperCase()
+      : defaults.googleBillingLocation,
+    googleBillingDataset: String(rawData.googleBillingDataset || "").trim().slice(0, 128),
+    googleBillingTable: String(rawData.googleBillingTable || "").trim().slice(0, 256),
+    spendLookbackDays:
+      Number.isInteger(spendLookbackDays) && spendLookbackDays >= 1 && spendLookbackDays <= 60
+        ? spendLookbackDays
+        : defaults.spendLookbackDays
+  };
+}
+
+async function loadPromptLabAdminConfig() {
+  const configSnapshot = await getAdminConfigRef().get();
+  const rawData = configSnapshot.exists ? configSnapshot.data() : {};
+
+  return sanitizePromptLabAdminConfig(rawData);
+}
+
+function buildProviderStatus(secretValues = {}) {
+  return {
+    geminiKeyConfigured: Boolean(secretValues.geminiApiKey),
+    openAiKeyConfigured: Boolean(secretValues.openAiApiKey),
+    googleBillingConfigured: Boolean(
+      secretValues.googleBillingProjectId &&
+      secretValues.googleBillingLocation &&
+      secretValues.googleBillingDataset &&
+      secretValues.googleBillingTable
+    )
+  };
+}
+
+function serializePromptLabAdminConfig(config, secretValues = {}) {
+  return {
+    settings: config,
+    supportedProviders: ACTIVITY_CONFIG.supportedProviders,
+    providerModelCatalog: ACTIVITY_CONFIG.providerModelCatalog,
+    providerStatus: buildProviderStatus({
+      ...secretValues,
+      googleBillingProjectId: config.googleBillingProjectId,
+      googleBillingLocation: config.googleBillingLocation,
+      googleBillingDataset: config.googleBillingDataset,
+      googleBillingTable: config.googleBillingTable
+    })
   };
 }
 
@@ -346,6 +453,30 @@ async function publishPublicSeatMap(seatMapPayload) {
   );
 }
 
+function buildProviderSelection(config) {
+  const activeProvider = config.activeProvider === "openai" ? "openai" : "gemini";
+
+  if (activeProvider === "openai") {
+    return {
+      provider: "openai",
+      imageModel: config.openAiImageModel,
+      openAiImageQuality: config.openAiImageQuality,
+      openAiImageSize: config.openAiImageSize,
+      supportsSeed: false
+    };
+  }
+
+  return {
+    provider: "gemini",
+    imageModel: config.geminiImageModel,
+    geminiAspectRatio: config.geminiAspectRatio,
+    geminiGuidanceScale: config.geminiGuidanceScale,
+    geminiImageSize: config.geminiImageSize,
+    supportsSeed: config.geminiImageModel.startsWith("imagen-")
+      || config.geminiImageModel === "gemini-2.5-flash-image"
+  };
+}
+
 async function generateImageWithGemini(ai, finalPromptText, seed) {
   const config = {
     responseModalities: ["TEXT", "IMAGE"]
@@ -373,6 +504,283 @@ async function generateImageWithGemini(ai, finalPromptText, seed) {
   }
 
   throw new Error("Gemini image generation did not return image data.");
+}
+
+async function generateImageWithImagen(ai, finalPromptText, seed, promptConfig) {
+  const response = await ai.models.generateImages({
+    model: promptConfig.imageModel,
+    prompt: finalPromptText,
+    config: {
+      numberOfImages: 1,
+      aspectRatio: promptConfig.geminiAspectRatio,
+      guidanceScale: promptConfig.geminiGuidanceScale,
+      imageSize: promptConfig.geminiImageSize,
+      negativePrompt: ACTIVITY_CONFIG.imageNegativePromptEnglish,
+      outputMimeType: "image/png",
+      language: "en",
+      ...(Number.isInteger(seed) ? { seed } : {})
+    }
+  });
+  const firstImage = response.generatedImages?.[0]?.image;
+  const imageBase64 = String(firstImage?.imageBytes || "").trim();
+
+  if (!imageBase64) {
+    throw new Error("Imagen generation did not return image data.");
+  }
+
+  return {
+    imageBase64,
+    mimeType: String(firstImage?.mimeType || "image/png").trim() || "image/png"
+  };
+}
+
+async function fetchOpenAiJson(url, apiKey, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      String(payload?.error?.message || `OpenAI request failed with status ${response.status}.`)
+    );
+  }
+
+  return payload;
+}
+
+async function generateImageWithOpenAi(apiKey, finalPromptText, promptConfig) {
+  const payload = await fetchOpenAiJson("https://api.openai.com/v1/images/generations", apiKey, {
+    method: "POST",
+    body: JSON.stringify({
+      model: promptConfig.imageModel,
+      prompt: finalPromptText,
+      quality: promptConfig.openAiImageQuality,
+      size: promptConfig.openAiImageSize
+    })
+  });
+  const imageBase64 = String(payload?.data?.[0]?.b64_json || "").trim();
+
+  if (!imageBase64) {
+    throw new Error("OpenAI image generation did not return image data.");
+  }
+
+  return {
+    imageBase64,
+    mimeType: "image/png",
+    usage: payload?.usage || null
+  };
+}
+
+function buildUtcMidnightDate(date = new Date()) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function buildDayBuckets(days) {
+  const safeDays = Math.max(1, Math.min(60, Number(days) || ACTIVITY_CONFIG.adminPromptLabDefaults.spendLookbackDays));
+  const todayUtc = buildUtcMidnightDate();
+  const firstDay = new Date(todayUtc.getTime() - (safeDays - 1) * 24 * 60 * 60 * 1000);
+  const startSeconds = Math.floor(firstDay.getTime() / 1000);
+  const endSeconds = Math.floor((todayUtc.getTime() + 24 * 60 * 60 * 1000) / 1000);
+
+  return {
+    safeDays,
+    startSeconds,
+    endSeconds
+  };
+}
+
+function formatUtcDayKeyFromSeconds(value) {
+  const safeDate = new Date(Number(value || 0) * 1000);
+  return safeDate.toISOString().slice(0, 10);
+}
+
+function formatCurrencyValue(value) {
+  return Number((Number(value) || 0).toFixed(4));
+}
+
+function parseOpenAiCostBuckets(payload) {
+  const buckets = Array.isArray(payload?.data) ? payload.data : [];
+
+  return buckets.map((bucket) => {
+    const results = Array.isArray(bucket?.results) ? bucket.results : [];
+    const amount = results.reduce((sum, item) => sum + Number(item?.amount?.value || 0), 0);
+
+    return {
+      day: formatUtcDayKeyFromSeconds(bucket?.start_time),
+      usd: formatCurrencyValue(amount)
+    };
+  });
+}
+
+function parseOpenAiImageUsageBuckets(payload) {
+  const buckets = Array.isArray(payload?.data) ? payload.data : [];
+
+  return buckets.map((bucket) => {
+    const results = Array.isArray(bucket?.results) ? bucket.results : [];
+    const images = results.reduce((sum, item) => {
+      const candidateKeys = ["images", "num_images", "generated_images", "output_images"];
+
+      for (const key of candidateKeys) {
+        const numericValue = Number(item?.[key]);
+
+        if (Number.isFinite(numericValue) && numericValue >= 0) {
+          return sum + numericValue;
+        }
+      }
+
+      return sum;
+    }, 0);
+
+    return {
+      day: formatUtcDayKeyFromSeconds(bucket?.start_time),
+      images: Math.floor(images)
+    };
+  });
+}
+
+function mergeDailySpendRows(costRows, usageRows) {
+  const rowMap = new Map();
+
+  for (const row of costRows) {
+    rowMap.set(row.day, {
+      day: row.day,
+      openAiUsd: row.usd,
+      openAiImages: 0,
+      googleUsd: 0
+    });
+  }
+
+  for (const row of usageRows) {
+    const existing = rowMap.get(row.day) || {
+      day: row.day,
+      openAiUsd: 0,
+      openAiImages: 0,
+      googleUsd: 0
+    };
+    existing.openAiImages = row.images;
+    rowMap.set(row.day, existing);
+  }
+
+  return rowMap;
+}
+
+async function loadOpenAiSpendReport(apiKey, days) {
+  const { safeDays, startSeconds, endSeconds } = buildDayBuckets(days);
+  const commonParams = new URLSearchParams({
+    start_time: String(startSeconds),
+    end_time: String(endSeconds),
+    bucket_width: "1d"
+  });
+  const costsUrl = `https://api.openai.com/v1/organization/costs?${commonParams.toString()}`;
+  const usageUrl = `https://api.openai.com/v1/organization/usage/images?${commonParams.toString()}`;
+  const [costPayload, usagePayload] = await Promise.all([
+    fetchOpenAiJson(costsUrl, apiKey),
+    fetchOpenAiJson(usageUrl, apiKey)
+  ]);
+  const mergedRows = mergeDailySpendRows(
+    parseOpenAiCostBuckets(costPayload),
+    parseOpenAiImageUsageBuckets(usagePayload)
+  );
+
+  return {
+    days: safeDays,
+    rowMap: mergedRows
+  };
+}
+
+async function loadGoogleBillingSpendReport(config, days) {
+  if (!config.googleBillingProjectId || !config.googleBillingDataset || !config.googleBillingTable) {
+    return {
+      days,
+      rowMap: new Map(),
+      needsSetup: true
+    };
+  }
+
+  const tablePath =
+    `\`${config.googleBillingProjectId}.${config.googleBillingDataset}.${config.googleBillingTable}\``;
+  const { safeDays } = buildDayBuckets(days);
+  const todayUtc = buildUtcMidnightDate();
+  const firstDay = new Date(todayUtc.getTime() - (safeDays - 1) * 24 * 60 * 60 * 1000);
+  const [rows] = await bigquery.query({
+    query: [
+      "SELECT",
+      "  FORMAT_DATE('%F', DATE(usage_start_time)) AS day,",
+      "  ROUND(SUM(CAST(cost AS NUMERIC)), 4) AS usd",
+      `FROM ${tablePath}`,
+      "WHERE DATE(usage_start_time) BETWEEN @startDate AND @endDate",
+      "GROUP BY day",
+      "ORDER BY day DESC"
+    ].join("\n"),
+    location: config.googleBillingLocation || "US",
+    params: {
+      startDate: firstDay.toISOString().slice(0, 10),
+      endDate: todayUtc.toISOString().slice(0, 10)
+    }
+  });
+  const rowMap = new Map();
+
+  for (const row of rows) {
+    rowMap.set(String(row.day), {
+      day: String(row.day),
+      googleUsd: formatCurrencyValue(row.usd || 0)
+    });
+  }
+
+  return {
+    days: safeDays,
+    rowMap,
+    needsSetup: false
+  };
+}
+
+function buildSpendReportRows(days, openAiReport, googleReport) {
+  const { safeDays } = buildDayBuckets(days);
+  const todayUtc = buildUtcMidnightDate();
+  const rows = [];
+
+  for (let offset = 0; offset < safeDays; offset += 1) {
+    const dayDate = new Date(todayUtc.getTime() - offset * 24 * 60 * 60 * 1000);
+    const dayKey = dayDate.toISOString().slice(0, 10);
+    const openAiRow = openAiReport?.rowMap?.get(dayKey) || {};
+    const googleRow = googleReport?.rowMap?.get(dayKey) || {};
+    const openAiUsd = formatCurrencyValue(openAiRow.openAiUsd || 0);
+    const googleUsd = formatCurrencyValue(googleRow.googleUsd || 0);
+
+    rows.push({
+      day: dayKey,
+      openAiUsd,
+      openAiImages: Number(openAiRow.openAiImages || 0),
+      googleUsd,
+      totalUsd: formatCurrencyValue(openAiUsd + googleUsd)
+    });
+  }
+
+  return rows;
+}
+
+function buildSpendTotals(rows) {
+  return rows.reduce(
+    (totals, row) => {
+      totals.openAiUsd = formatCurrencyValue(totals.openAiUsd + row.openAiUsd);
+      totals.googleUsd = formatCurrencyValue(totals.googleUsd + row.googleUsd);
+      totals.totalUsd = formatCurrencyValue(totals.totalUsd + row.totalUsd);
+      totals.openAiImages += Number(row.openAiImages || 0);
+      return totals;
+    },
+    {
+      openAiUsd: 0,
+      googleUsd: 0,
+      totalUsd: 0,
+      openAiImages: 0
+    }
+  );
 }
 
 function extractTextFromGeminiResponse(response) {
@@ -573,6 +981,8 @@ function buildCreationHistoryItem(usageDoc) {
     imageStoragePath: String(usageData.imageStoragePath || "").trim(),
     finalPromptEnglish: String(usageData.finalPromptEnglish || "").trim(),
     finalPromptHebrew: String(usageData.finalPromptHebrew || "").trim(),
+    provider: String(usageData.provider || "").trim(),
+    model: String(usageData.model || "").trim(),
     seed: normalizeSeed(usageData.seed),
     stepSnapshot: usageData.stepSnapshot || {
       character: "",
@@ -718,6 +1128,115 @@ exports.adminSetClassActive = onCall(getCallableOptions(), async (request) => {
     item: serializeClassAccessCode(updatedSnapshot)
   };
 });
+
+exports.adminGetPromptLabSettings = onCall(
+  getCallableOptions({
+    secrets: [GEMINI_API_KEY, OPENAI_API_KEY]
+  }),
+  async (request) => {
+    await requireAdminSession(request.data?.sessionToken);
+    const settings = await loadPromptLabAdminConfig();
+
+    return {
+      ok: true,
+      ...serializePromptLabAdminConfig(settings, {
+        geminiApiKey: normalizeSecretValue(GEMINI_API_KEY.value()),
+        openAiApiKey: normalizeSecretValue(OPENAI_API_KEY.value())
+      })
+    };
+  }
+);
+
+exports.adminSavePromptLabSettings = onCall(getCallableOptions(), async (request) => {
+  await requireAdminSession(request.data?.sessionToken);
+  const settings = sanitizePromptLabAdminConfig(request.data?.settings || {});
+
+  await getAdminConfigRef().set(
+    {
+      ...settings,
+      updatedAt: FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  return {
+    ok: true,
+    settings
+  };
+});
+
+exports.adminGetSpendReport = onCall(
+  getCallableOptions({
+    secrets: [OPENAI_API_KEY]
+  }),
+  async (request) => {
+    await requireAdminSession(request.data?.sessionToken);
+    const settings = await loadPromptLabAdminConfig();
+    const requestedDays = Number(request.data?.days);
+    const days =
+      Number.isInteger(requestedDays) && requestedDays >= 1 && requestedDays <= 60
+        ? requestedDays
+        : settings.spendLookbackDays;
+    const openAiApiKey = normalizeSecretValue(OPENAI_API_KEY.value());
+    let openAiError = "";
+    let googleError = "";
+    let openAiReport = {
+      days,
+      rowMap: new Map()
+    };
+    let googleReport = {
+      days,
+      rowMap: new Map(),
+      needsSetup: true
+    };
+
+    if (openAiApiKey) {
+      try {
+        openAiReport = await loadOpenAiSpendReport(openAiApiKey, days);
+      } catch (error) {
+        logger.error("Failed to load OpenAI spend report", error);
+        openAiError = String(error.message || "OpenAI spend report is unavailable.");
+
+        if (openAiError.includes("403")) {
+          openAiError =
+            "OpenAI usage and costs endpoints require an Admin API key or matching usage permission in the OpenAI organization.";
+        }
+      }
+    } else {
+      openAiError = "OpenAI API key is not configured in backend secrets.";
+    }
+
+    try {
+      googleReport = await loadGoogleBillingSpendReport(settings, days);
+    } catch (error) {
+      logger.error("Failed to load Google Billing spend report", error);
+      googleError = String(error.message || "Google billing export report is unavailable.");
+    }
+
+    const rows = buildSpendReportRows(days, openAiReport, googleReport);
+    const totals = buildSpendTotals(rows);
+
+    return {
+      ok: true,
+      rows,
+      totals,
+      days,
+      providerStatus: buildProviderStatus({
+        geminiApiKey: "configured",
+        openAiApiKey,
+        googleBillingProjectId: settings.googleBillingProjectId,
+        googleBillingLocation: settings.googleBillingLocation,
+        googleBillingDataset: settings.googleBillingDataset,
+        googleBillingTable: settings.googleBillingTable
+      }),
+      notes: {
+        openAiError,
+        googleError,
+        googleNeedsSetup: Boolean(googleReport.needsSetup)
+      }
+    };
+  }
+);
 
 exports.getSeatMap = onCall(
   getCallableOptions({
@@ -972,7 +1491,7 @@ exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
 
 exports.generateImage = onCall(
   getCallableOptions({
-    secrets: [GEMINI_API_KEY],
+    secrets: [GEMINI_API_KEY, OPENAI_API_KEY],
     timeoutSeconds: 120,
     memory: "1GiB"
   }),
@@ -1027,23 +1546,25 @@ exports.generateImage = onCall(
       };
     }
 
-    const apiKey = normalizeSecretValue(GEMINI_API_KEY.value());
-
-    if (!apiKey) {
-      throw new HttpsError(
-        "failed-precondition",
-        "סוד Gemini API לא הוגדר ב-Firebase Functions."
-      );
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+    const promptLabSettings = await loadPromptLabAdminConfig();
+    const providerSelection = buildProviderSelection(promptLabSettings);
     let finalPromptHebrew;
     let finalPromptEnglish;
     let translatedPromptStepsEnglish;
     let image;
+    let provider = providerSelection.provider;
+    let model = providerSelection.imageModel;
+    let effectiveSeed = providerSelection.supportsSeed ? seed : null;
 
     try {
       finalPromptHebrew = buildFinalHebrewPrompt(steps);
+      const geminiApiKey = normalizeSecretValue(GEMINI_API_KEY.value());
+
+      if (!geminiApiKey) {
+        throw new Error("Gemini translation key is missing.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       translatedPromptStepsEnglish =
         getCachedTranslatedSteps(sessionData, promptStepsHash) ||
         await translateStepsToEnglish(ai, steps);
@@ -1051,7 +1572,22 @@ exports.generateImage = onCall(
         translatedPromptStepsEnglish,
         ACTIVITY_CONFIG.imagePromptGuardrailsEnglish
       );
-      image = await generateImageWithGemini(ai, finalPromptEnglish, seed);
+
+      if (providerSelection.provider === "openai") {
+        const openAiApiKey = normalizeSecretValue(OPENAI_API_KEY.value());
+
+        if (!openAiApiKey) {
+          throw new Error("OpenAI image key is missing.");
+        }
+
+        image = await generateImageWithOpenAi(openAiApiKey, finalPromptEnglish, providerSelection);
+      } else {
+        if (providerSelection.imageModel.startsWith("imagen-")) {
+          image = await generateImageWithImagen(ai, finalPromptEnglish, effectiveSeed, providerSelection);
+        } else {
+          image = await generateImageWithGemini(ai, finalPromptEnglish, effectiveSeed);
+        }
+      }
     } catch (error) {
       logger.error("Failed to generate an image from validated prompt steps", error);
       throw new HttpsError(
@@ -1088,8 +1624,10 @@ exports.generateImage = onCall(
         lastGeneratedImageUrl: storedImage.imageDownloadUrl || "",
         lastGeneratedPromptEnglish: finalPromptEnglish,
         lastGeneratedPrompt: finalPromptHebrew,
-        currentSeed: seed,
-        lastUsedSeed: seed,
+        lastGeneratedModel: model,
+        lastGeneratedProvider: provider,
+        currentSeed: effectiveSeed,
+        lastUsedSeed: effectiveSeed,
         lastSeenAt: FieldValue.serverTimestamp(),
         promptTranslationHash: promptStepsHash,
         status: "generated",
@@ -1122,8 +1660,9 @@ exports.generateImage = onCall(
       imageDownloadUrl: storedImage.imageDownloadUrl || "",
       imageMimeType: image.mimeType,
       imageStoragePath: storedImage.imageStoragePath || "",
-      model: ACTIVITY_CONFIG.imageModel,
-      seed,
+      model,
+      provider,
+      seed: effectiveSeed,
       sessionId: sessionRef.id,
       stepSnapshot: steps,
       studentName: sessionData.studentName || "תלמיד/ה"
@@ -1137,8 +1676,11 @@ exports.generateImage = onCall(
       imageStoragePath: storedImage.imageStoragePath || "",
       finalPromptEnglish,
       finalPromptHebrew,
+      model,
+      provider,
       remainingGenerations: Math.max(generationLimit - newGenerationCount, 0),
-      seed,
+      seed: effectiveSeed,
+      seedApplied: providerSelection.supportsSeed,
       usageId: usageRef.id,
       message: ACTIVITY_CONFIG.generationSuccess
     };

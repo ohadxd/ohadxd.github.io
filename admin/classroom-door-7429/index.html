@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Funlab | ניהול כיתות</title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="stylesheet" href="/css/style.css?v=20260308-admin-1" />
+  <link rel="stylesheet" href="/css/style.css?v=20260314-admin-2" />
 </head>
 <body>
   <div class="wrap">
@@ -77,6 +77,132 @@
         </form>
       </section>
 
+      <section id="providerSettingsCard" class="card" hidden>
+        <div class="seat-picker-head">
+          <h2><span class="icon">🧠</span> ספקי AI ומודלים</h2>
+          <button id="refreshPromptLabSettingsButton" class="btn-ghost btn-small" type="button">רענון</button>
+        </div>
+        <form id="promptLabSettingsForm" class="builder-grid">
+          <div class="field">
+            <label for="activeProviderSelect">ספק פעיל</label>
+            <select id="activeProviderSelect" class="input"></select>
+          </div>
+          <div class="field">
+            <label for="geminiImageModelSelect">מודל תמונה של Gemini</label>
+            <select id="geminiImageModelSelect" class="input"></select>
+          </div>
+          <div class="field">
+            <label for="openAiImageModelSelect">מודל תמונה של OpenAI</label>
+            <select id="openAiImageModelSelect" class="input"></select>
+          </div>
+          <div class="field">
+            <label for="openAiImageQualitySelect">איכות תמונת OpenAI</label>
+            <select id="openAiImageQualitySelect" class="input">
+              <option value="low">low</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+              <option value="auto">auto</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="openAiImageSizeSelect">גודל תמונת OpenAI</label>
+            <select id="openAiImageSizeSelect" class="input">
+              <option value="1024x1024">1024x1024</option>
+              <option value="1536x1024">1536x1024</option>
+              <option value="1024x1536">1024x1536</option>
+              <option value="auto">auto</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="geminiAspectRatioSelect">יחס תמונה של Imagen</label>
+            <select id="geminiAspectRatioSelect" class="input">
+              <option value="1:1">1:1</option>
+              <option value="3:4">3:4</option>
+              <option value="4:3">4:3</option>
+              <option value="9:16">9:16</option>
+              <option value="16:9">16:9</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="geminiImageSizeSelect">גודל תמונת Imagen</label>
+            <select id="geminiImageSizeSelect" class="input">
+              <option value="1K">1K</option>
+              <option value="2K">2K</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="geminiGuidanceScaleInput">Guidance של Imagen</label>
+            <input id="geminiGuidanceScaleInput" class="input" type="number" min="1" max="20" step="0.5" />
+          </div>
+          <div class="field field-full">
+            <label>סטטוס מפתחות</label>
+            <div id="providerStatusPills" class="admin-pill-row"></div>
+          </div>
+          <div class="action-row field-full">
+            <button id="savePromptLabSettingsButton" class="btn-secondary" type="submit">שמירת הגדרות AI</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="spendReportCard" class="card" hidden>
+        <div class="seat-picker-head">
+          <h2><span class="icon">💸</span> עלויות יומיות</h2>
+          <button id="refreshSpendReportButton" class="btn-ghost btn-small" type="button">רענון עלויות</button>
+        </div>
+        <form id="billingSettingsForm" class="builder-grid">
+          <div class="field">
+            <label for="googleBillingProjectInput">Google Billing Project</label>
+            <input id="googleBillingProjectInput" class="input" type="text" placeholder="למשל: groovetech-9a3fb" />
+          </div>
+          <div class="field">
+            <label for="googleBillingLocationSelect">מיקום BigQuery</label>
+            <select id="googleBillingLocationSelect" class="input">
+              <option value="US">US</option>
+              <option value="EU">EU</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="googleBillingDatasetInput">BigQuery Dataset</label>
+            <input id="googleBillingDatasetInput" class="input" type="text" placeholder="למשל: billing_export" />
+          </div>
+          <div class="field">
+            <label for="googleBillingTableInput">BigQuery Table</label>
+            <input id="googleBillingTableInput" class="input" type="text" placeholder="למשל: gcp_billing_export_v1_xxx" />
+          </div>
+          <div class="field">
+            <label for="spendLookbackDaysInput">כמה ימים להציג</label>
+            <input id="spendLookbackDaysInput" class="input" type="number" min="1" max="60" value="14" />
+          </div>
+          <div class="action-row field-full">
+            <button id="saveBillingSettingsButton" class="btn-secondary" type="submit">שמירת הגדרות עלויות</button>
+          </div>
+        </form>
+        <div id="spendMetricGrid" class="admin-metric-grid"></div>
+        <div id="spendNotesBox" class="callout warn" hidden>
+          <div class="row">
+            <div class="badge2">i</div>
+            <div class="status-copy">
+              <strong id="spendNotesTitle">הערות עלויות</strong>
+              <div id="spendNotesText"></div>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>יום</th>
+                <th>OpenAI USD</th>
+                <th>OpenAI Images</th>
+                <th>Google USD</th>
+                <th>סה״כ USD</th>
+              </tr>
+            </thead>
+            <tbody id="spendReportBody"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section id="classListCard" class="card" hidden>
         <div class="seat-picker-head">
           <h2><span class="icon">🏫</span> כל הכיתות</h2>
@@ -87,6 +213,6 @@
     </main>
   </div>
 
-  <script type="module" src="/js/admin-console.js?v=20260308-admin-1"></script>
+  <script type="module" src="/js/admin-console.js?v=20260314-admin-2"></script>
 </body>
 </html>

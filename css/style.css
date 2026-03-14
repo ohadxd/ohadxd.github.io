@@ -1269,3 +1269,82 @@ figure,
   gap: 8px;
   flex-wrap: wrap;
 }
+
+.admin-pill-row{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill.pill-good{
+  background: rgba(52,211,153,0.16);
+  border-color: rgba(52,211,153,0.28);
+  color: #d6ffe8;
+}
+
+.pill.pill-warn{
+  background: rgba(251,191,36,0.16);
+  border-color: rgba(251,191,36,0.28);
+  color: #fff4cf;
+}
+
+.admin-metric-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.admin-metric-card{
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+}
+
+.admin-metric-key{
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-metric-value{
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+.table-wrap{
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.admin-table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+}
+
+.admin-table th,
+.admin-table td{
+  text-align: right;
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  white-space: nowrap;
+}
+
+.admin-table th{
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-table td{
+  font-size: 15px;
+}
+
+.admin-table-empty{
+  text-align: center;
+  color: var(--muted);
+}
