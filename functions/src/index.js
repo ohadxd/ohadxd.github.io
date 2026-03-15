@@ -531,19 +531,24 @@ async function generateImageWithGemini(ai, finalPromptText, seed) {
 }
 
 async function generateImageWithImagen(ai, finalPromptText, seed, promptConfig) {
+  const imageConfig = {
+    numberOfImages: 1,
+    aspectRatio: promptConfig.geminiAspectRatio,
+    outputMimeType: "image/png"
+  };
+
+  if (Number.isInteger(seed)) {
+    imageConfig.seed = seed;
+  }
+
+  if (promptConfig.imageModel === "imagen-4.0-generate-001") {
+    imageConfig.imageSize = promptConfig.geminiImageSize;
+  }
+
   const response = await ai.models.generateImages({
     model: promptConfig.imageModel,
     prompt: finalPromptText,
-    config: {
-      numberOfImages: 1,
-      aspectRatio: promptConfig.geminiAspectRatio,
-      guidanceScale: promptConfig.geminiGuidanceScale,
-      imageSize: promptConfig.geminiImageSize,
-      negativePrompt: ACTIVITY_CONFIG.imageNegativePromptEnglish,
-      outputMimeType: "image/png",
-      language: "en",
-      ...(Number.isInteger(seed) ? { seed } : {})
-    }
+    config: imageConfig
   });
   const firstImage = response.generatedImages?.[0]?.image;
   const imageBase64 = String(firstImage?.imageBytes || "").trim();
