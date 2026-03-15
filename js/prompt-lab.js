@@ -394,6 +394,30 @@ function isComicCreation(creation) {
   return isComicLesson(creation?.lessonKey || state.lessonKey);
 }
 
+function getAlternateLessonKey(lessonKey = state.lessonKey) {
+  return normalizeLessonKey(lessonKey) === "comic-lab" ? "image-lab" : "comic-lab";
+}
+
+function isInvalidClassCodeError(error) {
+  return String(error?.message || "").includes("קוד הכיתה לא נכון");
+}
+
+async function fetchSeatMapForLesson(classCode, lessonKey) {
+  return getSeatMapCallable({
+    classCode,
+    lessonKey
+  });
+}
+
+async function joinActivityForLesson(lessonKey) {
+  return joinActivityCallable({
+    classCode: classCodeInput.value,
+    lessonKey,
+    studentName: studentNameInput.value,
+    seatNumber: state.selectedSeatNumber
+  });
+}
+
 function getVisibleSeatLimit() {
   return isComicLesson() ? COMIC_VISIBLE_SEAT_COUNT : Number.POSITIVE_INFINITY;
 }
@@ -1713,10 +1737,20 @@ async function loadSeatMap({ showErrors = false } = {}) {
   refreshSeatsButton.disabled = true;
 
   try {
-    const response = await getSeatMapCallable({
-      classCode,
-      lessonKey: state.lessonKey
-    });
+    let response;
+
+    try {
+      response = await fetchSeatMapForLesson(classCode, state.lessonKey);
+    } catch (error) {
+      if (!isInvalidClassCodeError(error) || state.sessionId) {
+        throw error;
+      }
+
+      const alternateLessonKey = getAlternateLessonKey(state.lessonKey);
+      response = await fetchSeatMapForLesson(classCode, alternateLessonKey);
+      setLessonKey(alternateLessonKey, { resetSteps: true });
+    }
+
     const payload = response.data;
     applySeatMapPayload(payload);
     if (!state.sessionId) {
@@ -1869,12 +1903,20 @@ joinForm.addEventListener("submit", async (event) => {
   setButtonState(joinButton, true, "כניסה לפעילות", "מתחבר...");
 
   try {
-    const response = await joinActivityCallable({
-      classCode: classCodeInput.value,
-      lessonKey: state.lessonKey,
-      studentName: studentNameInput.value,
-      seatNumber: state.selectedSeatNumber
-    });
+    let response;
+
+    try {
+      response = await joinActivityForLesson(state.lessonKey);
+    } catch (error) {
+      if (!isInvalidClassCodeError(error) || state.sessionId) {
+        throw error;
+      }
+
+      const alternateLessonKey = getAlternateLessonKey(state.lessonKey);
+      await fetchSeatMapForLesson(normalizeClassCode(classCodeInput.value), alternateLessonKey);
+      setLessonKey(alternateLessonKey, { resetSteps: true });
+      response = await joinActivityForLesson(alternateLessonKey);
+    }
 
     applySession(response.data);
     await loadGenerationHistory();
