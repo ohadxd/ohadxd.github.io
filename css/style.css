@@ -807,6 +807,79 @@ figure,
   transform: translateY(-2px);
 }
 
+.download-card{
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #cfe3f7;
+  background: linear-gradient(135deg, #e0f2fe, #fff3c7);
+  box-shadow: 0 12px 24px rgba(14,165,233,0.12);
+}
+
+.download-card h3{
+  margin: 0;
+  font-size: 22px;
+}
+
+.download-card p{
+  margin: 0;
+  color: #334155;
+}
+
+.download-actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.download-hint{
+  font-size: 14px;
+  color: #475569;
+}
+
+.inline-asset{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  margin-inline: 4px;
+  border-radius: 999px;
+  border: 1px solid #cfe3f7;
+  background: #f8fbff;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.inline-asset img{
+  width: auto;
+  height: 22px;
+  max-width: 42px;
+  aspect-ratio: auto;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+}
+
+.inline-asset span{
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.step-lead{
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.mini-note{
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+}
+
 .back-links{
   display: inline-flex;
   gap: 10px;

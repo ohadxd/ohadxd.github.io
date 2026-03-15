@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Funlab | Roblox Studio שיעור 2 - צבע, תנועה, סיבוב וגודל עם בלוקים</title>
+  <meta name="description" content="שיעור 2 ב-Roblox Studio של Funlab: תכנות בבלוקים עם BlockLua ושינוי צבע, תנועה, סיבוב וגודל של חפצים." />
+  <meta name="keywords" content="Funlab, Roblox Studio שיעור 2, BlockLua, תכנות בבלוקים, מדריך רובלוקס בעברית" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta property="og:locale" content="he_IL" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Funlab" />
+  <meta property="og:title" content="Funlab | Roblox Studio שיעור 2 - צבע, תנועה, סיבוב וגודל עם בלוקים" />
+  <meta property="og:description" content="חלק 1 של שיעור 2: מתחילים לתכנת בבלוקים ומשנים צבע של קוביה אוטומטית." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="/courses/roblox/level-a/lesson-2/" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "Roblox Studio שיעור 2: BlockLua ושינוי צבע של קוביה",
+    "inLanguage": "he-IL",
+    "about": "Roblox Studio",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Funlab",
+      "alternateName": ["funlab", "פאנלאב", "פנלב", "פן לב"]
+    }
+  }
+  </script>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="site-nav" aria-label="ניווט עליון">
+      <a href="/">בית</a>
+      <a href="/courses/">קורסים</a>
+      <a href="/courses/roblox/">Roblox</a>
+      <a href="/courses/roblox/level-a/">רמה א</a>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="title">
+          <div class="badge"><span class="dot"></span> Roblox Studio • שיעור 2</div>
+          <h1>צבע, תנועה, סיבוב וגודל עם קוד בבלוקים</h1>
+          <p class="subtitle">
+            בשיעור הזה נתחיל לעבוד עם <b>BlockLua</b>. בחלק 1 נלמד איך לגרום לקוביה לשנות צבע
+            שוב ושוב, ובהמשך השיעור נוסיף גם תנועה, סיבוב ושינוי גודל.
+          </p>
+          <div>
+            <span class="pill">⏱️ 45 דקות</span>
+            <span class="pill">🧠 חלק 1 של שיעור 2</span>
+            <span class="pill">🎨 תוצר: קוביה שמחליפה צבעים</span>
+          </div>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="k">מה נלמד</div>
+            <div class="v">BlockLua + לולאות</div>
+          </div>
+          <div class="stat">
+            <div class="k">כלים</div>
+            <div class="v">Color3 • Random</div>
+          </div>
+          <div class="stat">
+            <div class="k">מכינים להמשך</div>
+            <div class="v">תנועה • סיבוב • גודל</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="card quick-guide" aria-label="איך משתמשים בעמוד">
+      <h2><span class="icon">🕹️</span> איך עובדים בעמוד?</h2>
+      <div class="quick-items">
+        <div class="quick-item"><b>1.</b> קודם מורידים את קובץ התרגול ופותחים אותו ב-Roblox Studio.</div>
+        <div class="quick-item"><b>2.</b> עוברים שלב-שלב ובכל שלב לוחצים "סיימתי".</div>
+        <div class="quick-item"><b>3.</b> לחיצה על GIF או תמונה תפתח אותם בגדול.</div>
+      </div>
+    </section>
+
+    <main class="grid single-col">
+      <section class="card">
+        <h2><span class="icon">⭐</span> דוגמה לתוצאה</h2>
+        <p class="step-lead">כך הקוביה תיראה בסוף חלק 1 של השיעור:</p>
+        <figure class="zoomable-gif">
+          <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+            <img src="/assets/roblox/level-a/lesson-2/example.gif" alt="דוגמה לקוביה שמשנה צבע כל הזמן" />
+          </button>
+          <figcaption>דוגמה: קוביה שמשנה צבע כל הזמן</figcaption>
+        </figure>
+      </section>
+
+      <section class="card">
+        <div class="download-card">
+          <h3>קובץ התרגול של שיעור 2</h3>
+          <p>הקובץ מוכן להורדה ישירה. לחצו על הכפתור, שמרו את הקובץ, ואז פתחו אותו כדי ש-Roblox Studio יעלה עם הפרויקט המתאים.</p>
+          <div class="download-actions">
+            <a class="btn-primary" href="/assets/roblox/level-a/lesson-2/3%20no%20script.rbxl" download="roblox-level-a-lesson-2-part-1.rbxl">הורדת קובץ ה-RBXL</a>
+            <a class="btn-ghost" href="/assets/roblox/level-a/lesson-2/3%20no%20script.rbxl" target="_blank" rel="noopener">פתיחה ישירה של הקובץ</a>
+          </div>
+          <div class="download-hint">אם ההורדה לא מתחילה בלחיצה הראשונה, לחצו קליק ימני ובחרו "שמור קישור בשם...".</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">2</span> שלבי העבודה</h2>
+        <div class="progress-box" aria-live="polite">
+          <div class="progress-text">התקדמות: <b id="doneCount">0</b>/<b id="totalCount">0</b> שלבים</div>
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <div class="callout good">
+          <div class="row">
+            <div class="badge2">TIP</div>
+            <div>זהו רק חלק 1 של שיעור 2. בהמשך נוסיף לאותו עמוד גם תנועה, סיבוב ושינוי גודל.</div>
+          </div>
+        </div>
+
+        <div class="timeline">
+          <div class="slot" data-step="1">
+            <div class="top">
+              <div class="title">שלב א - הורדת הקובץ ופתיחתו</div>
+              <div class="time"><span class="clock"></span> 5 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>הורידו את קובץ התרגול באמצעות הכפתור למעלה.</li>
+              <li>פתחו את הקובץ שהורדתם, ו-Roblox Studio ייפתח עם הפרויקט.</li>
+            </ol>
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-2/openfile.gif" alt="פתיחת קובץ ה-RBXL ב-Roblox Studio" />
+              </button>
+              <figcaption>פותחים את קובץ התרגול ומחכים ש-Roblox Studio יעלה</figcaption>
+            </figure>
+          </div>
+
+          <div class="slot" data-step="2">
+            <div class="top">
+              <div class="title">שלב ב - בודקים ש-BlockLua עובד</div>
+              <div class="time"><span class="clock"></span> 4 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <p class="step-lead">
+              נוודא שהתוסף עובד כדי שנוכל לכתוב קוד בבלוקים. בדקו שהסמלים
+              <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/plus.png" alt="סמל הפלוס של BlockLua" /><span>BlockLua</span></span>
+              מופיעים בחלק הימני התחתון כמו בתמונה.
+            </p>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-2/blocklua.png" alt="בדיקה שסמלי BlockLua מופיעים בצד ימין למטה" />
+              <figcaption>אם הסמלים מופיעים כאן, אפשר להמשיך לכתוב קוד בבלוקים</figcaption>
+            </figure>
+          </div>
+
+          <div class="slot" data-step="3">
+            <div class="top">
+              <div class="title">שלב ג - מוסיפים סקריפט לקוביה</div>
+              <div class="time"><span class="clock"></span> 6 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>לחצו על הבלוק האדום הגדול משמאל.</li>
+              <li>לחצו על הכפתור <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/plus1.png" alt="כפתור פלוס להוספת פריט" /><span>+</span></span>.</li>
+              <li>בחרו באפשרות הראשונה בירוק: <b>Server Script</b>.</li>
+            </ol>
+            <p class="mini-note">נהדר! עכשיו אפשר להתחיל לתכנת את הקוביה.</p>
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-2/add script.gif" alt="הוספת Server Script לקוביה" />
+              </button>
+              <figcaption>לחיצה על הפלוס ואז בחירה ב-Server Script</figcaption>
+            </figure>
+          </div>
+
+          <div class="slot" data-step="4">
+            <div class="top">
+              <div class="title">שלב ד1 - מוסיפים לולאה עם Interval</div>
+              <div class="time"><span class="clock"></span> 7 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>לחצו על <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/loops.png" alt="תפריט loops" /><span>loops</span></span> וגררו את הבלוק <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/interval.png" alt="בלוק interval" /><span>interval</span></span>.</li>
+              <li>שימו את העכבר מעל <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/add number.png" alt="כפתור הוספת מספר" /><span>add number</span></span> ובחרו באפשרות הראשונה.</li>
+              <li>כתבו <b>0.2</b> כדי שכל 0.2 שניות תתבצע פקודה.</li>
+            </ol>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-2/number.png" alt="בחירת האפשרות הראשונה להוספת מספר" />
+              <figcaption>בוחרים את האפשרות הראשונה כדי להכניס מספר</figcaption>
+            </figure>
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-2/addinterval.gif" alt="הגדרת לולאת interval עם הערך 0.2" />
+              </button>
+              <figcaption>כך מוסיפים את לולאת ה-interval וממלאים 0.2</figcaption>
+            </figure>
+          </div>
+
+          <div class="slot" data-step="5">
+            <div class="top">
+              <div class="title">שלב ד2 - מוסיפים את שינוי הצבע</div>
+              <div class="time"><span class="clock"></span> 8 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>לחצו על <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/part.png" alt="תפריט part" /><span>part</span></span>. אם לא מצאתם, גללו למטה עם גלגלת העכבר.</li>
+              <li>גררו את הפקודה <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/changecolor.png" alt="פקודת שינוי צבע" /><span>change color</span></span> אל תוך לולאת ה-interval.</li>
+              <li>לחצו על הפלוס <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/addinstance.png" alt="כפתור הוספת instance" /><span>add instance</span></span> ובחרו באפשרות הראשונה.</li>
+              <li>אחר כך לחצו על זכוכית המגדלת עד שתופיע ההודעה <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/select.png" alt="בחירת instance" /><span>Select</span></span>.</li>
+              <li>ברשימה הימנית בחרו את <b>colorPart1</b>.</li>
+            </ol>
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-2/selectinstance.gif" alt="בחירת האובייקט colorPart1" />
+              </button>
+              <figcaption>בחירת האובייקט colorPart1 כדי שהפקודה תדע איזה חלק לצבוע</figcaption>
+            </figure>
+          </div>
+
+          <div class="slot" data-step="6">
+            <div class="top">
+              <div class="title">שלב ד3 - בונים צבע חדש עם RGB</div>
+              <div class="time"><span class="clock"></span> 6 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <p class="step-lead">
+              כדי לבחור צבע חדש, צריך לדעת שהמחשב יוצר צבע על ידי 3 אורות בעוצמות שונות:
+              <b>אדום</b>, <b>ירוק</b> ו-<b>כחול</b>. כל ערך הוא בין <b>0</b> ל-<b>255</b>.
+            </p>
+            <ol class="steps">
+              <li>לחצו על <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/world.png" alt="תפריט world" /><span>world</span></span> וחפשו את <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/color3.png" alt="בלוק Color3" /><span>Color3</span></span>.</li>
+              <li>גררו אותו אל המקום הריק אחרי <b>COLOR =</b>.</li>
+            </ol>
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-2/addcolor.gif" alt="הוספת בלוק Color3 אל הפקודה" />
+              </button>
+              <figcaption>מוסיפים את בלוק Color3 כדי לבנות צבע משלושה מספרים</figcaption>
+            </figure>
+          </div>
+
+          <div class="slot" data-step="7">
+            <div class="top">
+              <div class="title">שלב ד4 - מוסיפים מספרים רנדומליים</div>
+              <div class="time"><span class="clock"></span> 7 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>לחצו על <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/math.png" alt="תפריט math" /><span>math</span></span> וגררו לשלושת המקומות הריקים את <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/rnd.png" alt="בלוק random" /><span>random</span></span>.</li>
+              <li>גררו את <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/num.png" alt="בלוק מספר" /><span>num</span></span> אל ששת המקומות הריקים.</li>
+              <li>מלאו את המספרים כמו בתמונה, כך שכל random יבחר מספר בין 0 ל-255.</li>
+            </ol>
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-2/rndtake.gif" alt="גרירת בלוקי random למקומות הנכונים" />
+              </button>
+              <figcaption>מוסיפים Random לכל אחד משלושת ערוצי הצבע</figcaption>
+            </figure>
+            <figure class="step-static-image">
+              <img src="/assets/roblox/level-a/lesson-2/colorpart1.png" alt="התוצאה הסופית של בלוקי הצבע עם הערכים 0 עד 255" />
+              <figcaption>כך הבלוקים צריכים להיראות בסוף השלב</figcaption>
+            </figure>
+          </div>
+
+          <div class="slot" data-step="8">
+            <div class="top">
+              <div class="title">שלב ד5 - מריצים את המשחק</div>
+              <div class="time"><span class="clock"></span> 3 דק׳</div>
+              <button class="done-toggle" type="button" aria-pressed="false">סיימתי</button>
+            </div>
+            <ol class="steps">
+              <li>לחצו על <span class="inline-asset"><img src="/assets/roblox/level-a/lesson-2/run.png" alt="כפתור run" /><span>Run</span></span>.</li>
+              <li>בדקו שהקוביה מחליפה צבע כל הזמן.</li>
+            </ol>
+            <figure class="zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל GIF למסך מלא">
+                <img src="/assets/roblox/level-a/lesson-2/runcolor1.gif" alt="הרצת המשחק ובדיקת שינויי הצבע" />
+              </button>
+              <figcaption>אם הכל תקין, הקוביה תתחיל להשתנות בצבעים אוטומטית</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="small">© Funlab | פאנלאב | פנלב | פן לב</div>
+      <div class="back-links">
+        <a href="/courses/roblox/level-a/">חזרה לרמה א</a>
+        <a href="/courses/roblox/">חזרה לקורס Roblox</a>
+      </div>
+    </footer>
+  </div>
+
+  <div class="lightbox" id="gifLightbox" aria-hidden="true">
+    <button class="lightbox-close" id="closeLightbox" type="button" aria-label="סגירה">✕</button>
+    <img id="lightboxImg" alt="תמונה מוגדלת" />
+  </div>
+
+  <script src="/js/lesson2.js"></script>
+</body>
+</html>
