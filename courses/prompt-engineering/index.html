@@ -28,7 +28,7 @@
     "about": "Prompt Engineering for Children"
   }
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=20260308-seed-1" />
+  <link rel="stylesheet" href="/css/style.css?v=20260315-comic-1" />
 </head>
 <body>
   <div class="wrap">
@@ -64,15 +64,30 @@
 
     <main class="grid single-col">
       <section class="card">
+        <h2><span class="icon">🧠</span> בוחרים שיעור</h2>
+        <div id="lessonChooser" class="lesson-mode-grid">
+          <button class="lesson-mode-card is-active" type="button" data-lesson-key="image-lab">
+            <strong>בונים תמונה</strong>
+            <span>5 שלבים לרעיון אחד ברור.</span>
+          </button>
+          <button class="lesson-mode-card" type="button" data-lesson-key="comic-lab">
+            <strong>יוצרים קומיקס</strong>
+            <span>דמויות קבועות וסדרת פאנלים עד 15 יצירות.</span>
+          </button>
+        </div>
+        <p id="lessonLeadText" class="kid-note">במסלול הזה בונים תמונה אחת ב-5 שלבים קבועים.</p>
+      </section>
+
+      <section class="card">
         <h2><span class="icon">🧠</span> איך הפעילות עובדת</h2>
         <div class="quick-items">
-          <div class="quick-item">1. בוחרים דמות ראשית.</div>
-          <div class="quick-item">2. מוסיפים מקום או סביבה.</div>
-          <div class="quick-item">3. כותבים מה הדמות עושה.</div>
-          <div class="quick-item">4. בוחרים סגנון חזותי.</div>
-          <div class="quick-item">5. מוסיפים פרט מיוחד קטן ומעניין.</div>
+          <div id="lessonQuick1" class="quick-item">1. בוחרים דמות ראשית.</div>
+          <div id="lessonQuick2" class="quick-item">2. מוסיפים מקום או סביבה.</div>
+          <div id="lessonQuick3" class="quick-item">3. כותבים מה הדמות עושה.</div>
+          <div id="lessonQuick4" class="quick-item">4. בוחרים סגנון חזותי.</div>
+          <div id="lessonQuick5" class="quick-item">5. מוסיפים פרט מיוחד קטן ומעניין.</div>
         </div>
-        <p class="kid-note">המערכת לא מאפשרת בקשה חופשית לתמונה. היא בודקת שיש כל השלבים ורק אז יוצרת.</p>
+        <p id="lessonGuardrailText" class="kid-note">המערכת לא מאפשרת בקשה חופשית לתמונה. היא בודקת שיש כל השלבים ורק אז יוצרת.</p>
       </section>
 
 
@@ -116,67 +131,43 @@
       </section>
 
       <section id="activityCard" class="card" hidden>
-        <h2><span class="icon">🧩</span> בונים את הפרומפט</h2>
+        <h2><span class="icon">🧩</span> <span id="activityHeading">בונים את הפרומפט</span></h2>
+        <p id="activityIntro" class="field-help">ממלאים את כל 5 השלבים ואז יוצרים תמונה.</p>
         <div class="builder-grid">
           <div class="field">
-            <label for="stepCharacter">1. דמות ראשית</label>
+            <label id="stepCharacterLabel" for="stepCharacter">1. דמות ראשית</label>
             <textarea id="stepCharacter" class="textarea" data-step-key="character" placeholder="למשל: רובוט קטן וחברותי"></textarea>
-            <div class="field-help">מי הדמות שמופיעה בתמונה?</div>
+            <div id="stepCharacterHelp" class="field-help">מי הדמות שמופיעה בתמונה?</div>
             <div class="example-title">רעיונות מהירים</div>
-            <div class="example-grid" aria-label="רעיונות מהירים לדמות">
-              <button class="example-chip" type="button" data-fill-target="stepCharacter" data-fill-value="רובוט קטן וחברותי">רובוט קטן</button>
-              <button class="example-chip" type="button" data-fill-target="stepCharacter" data-fill-value="ילדה אמיצה עם תיק סגול">ילדה אמיצה</button>
-              <button class="example-chip" type="button" data-fill-target="stepCharacter" data-fill-value="חתול קוסם עם כובע גדול">חתול קוסם</button>
-              <button class="example-chip" type="button" data-fill-target="stepCharacter" data-fill-value="חד-קרן שמח וקופצני">חד-קרן שמח</button>
-            </div>
+            <div id="stepCharacterExamples" class="example-grid" aria-label="רעיונות מהירים לדמות"></div>
           </div>
           <div class="field">
-            <label for="stepPlace">2. מקום / סביבה</label>
+            <label id="stepPlaceLabel" for="stepPlace">2. מקום / סביבה</label>
             <textarea id="stepPlace" class="textarea" data-step-key="place" placeholder="למשל: גן משחקים עתידני"></textarea>
-            <div class="field-help">איפה הסיפור קורה?</div>
+            <div id="stepPlaceHelp" class="field-help">איפה הסיפור קורה?</div>
             <div class="example-title">רעיונות מהירים</div>
-            <div class="example-grid" aria-label="רעיונות מהירים למקום">
-              <button class="example-chip" type="button" data-fill-target="stepPlace" data-fill-value="יער קסום עם עצים זוהרים">יער קסום</button>
-              <button class="example-chip" type="button" data-fill-target="stepPlace" data-fill-value="גן משחקים עתידני וצבעוני">גן עתידני</button>
-              <button class="example-chip" type="button" data-fill-target="stepPlace" data-fill-value="טירה בעננים מעל השמש">טירה בעננים</button>
-              <button class="example-chip" type="button" data-fill-target="stepPlace" data-fill-value="עיר מתחת למים עם דגים נוצצים">עיר מתחת למים</button>
-            </div>
+            <div id="stepPlaceExamples" class="example-grid" aria-label="רעיונות מהירים למקום"></div>
           </div>
           <div class="field">
-            <label for="stepAction">3. פעולה</label>
+            <label id="stepActionLabel" for="stepAction">3. פעולה</label>
             <textarea id="stepAction" class="textarea" data-step-key="action" placeholder="למשל: אוסף עפיפון שנפל"></textarea>
-            <div class="field-help">מה הדמות עושה ממש עכשיו?</div>
+            <div id="stepActionHelp" class="field-help">מה הדמות עושה ממש עכשיו?</div>
             <div class="example-title">רעיונות מהירים</div>
-            <div class="example-grid" aria-label="רעיונות מהירים לפעולה">
-              <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מחזיק בלון צבעוני ביד ומחייך">מחזיק בלון</button>
-              <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מגלה אוצר קטן ומחייך">מגלה אוצר</button>
-              <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="עוזר לחבר לעבור גשר">עוזר לחבר</button>
-              <button class="example-chip" type="button" data-fill-target="stepAction" data-fill-value="מטיס עפיפון גדול בשמיים">מטיס עפיפון</button>
-            </div>
+            <div id="stepActionExamples" class="example-grid" aria-label="רעיונות מהירים לפעולה"></div>
           </div>
           <div class="field">
-            <label for="stepStyle">4. סגנון חזותי</label>
+            <label id="stepStyleLabel" for="stepStyle">4. סגנון חזותי</label>
             <textarea id="stepStyle" class="textarea" data-step-key="style" placeholder="למשל: איור ספר ילדים צבעוני"></textarea>
-            <div class="field-help">איך התמונה צריכה להיראות?</div>
+            <div id="stepStyleHelp" class="field-help">איך התמונה צריכה להיראות?</div>
             <div class="example-title">רעיונות מהירים</div>
-            <div class="example-grid" aria-label="רעיונות מהירים לסגנון חזותי">
-              <button class="example-chip" type="button" data-fill-target="stepStyle" data-fill-value="איור ספר ילדים צבעוני">איור ספר ילדים</button>
-              <button class="example-chip" type="button" data-fill-target="stepStyle" data-fill-value="קומיקס צבעוני עם קווים ברורים">קומיקס צבעוני</button>
-              <button class="example-chip" type="button" data-fill-target="stepStyle" data-fill-value="תלת־ממד חמוד ורך">תלת־ממד חמוד</button>
-              <button class="example-chip" type="button" data-fill-target="stepStyle" data-fill-value="ציור ריאליסטי באיכות גבוהה">ציור ריאליסטי</button>
-            </div>
+            <div id="stepStyleExamples" class="example-grid" aria-label="רעיונות מהירים לסגנון חזותי"></div>
           </div>
           <div class="field field-full">
-            <label for="stepDetail">5. פרט מיוחד</label>
+            <label id="stepDetailLabel" for="stepDetail">5. פרט מיוחד</label>
             <textarea id="stepDetail" class="textarea" data-step-key="detail" placeholder="למשל: תרמיל עם כוכבים זוהרים"></textarea>
-            <div class="field-help">איזה פרט קטן יעשה את התמונה מיוחדת?</div>
+            <div id="stepDetailHelp" class="field-help">איזה פרט קטן יעשה את התמונה מיוחדת?</div>
             <div class="example-title">רעיונות מהירים</div>
-            <div class="example-grid" aria-label="רעיונות מהירים לפרט מיוחד">
-              <button class="example-chip" type="button" data-fill-target="stepDetail" data-fill-value="לב זוהר על החזה">לב זוהר</button>
-              <button class="example-chip" type="button" data-fill-target="stepDetail" data-fill-value="כובע עם כוכבים נוצצים">כובע עם כוכבים</button>
-              <button class="example-chip" type="button" data-fill-target="stepDetail" data-fill-value="שביל קטן של ניצוצות זהובים">שביל ניצוצות</button>
-              <button class="example-chip" type="button" data-fill-target="stepDetail" data-fill-value="בלון בצורת לב שמרחף ליד הדמות">בלון בצורת לב</button>
-            </div>
+            <div id="stepDetailExamples" class="example-grid" aria-label="רעיונות מהירים לפרט מיוחד"></div>
           </div>
           <div class="field field-full">
             <label for="seedInput">זרע קבוע לתמונה (Seed)</label>
@@ -236,6 +227,6 @@
     </footer>
   </div>
 
-  <script type="module" src="/js/prompt-lab.js?v=20260308-seed-1"></script>
+  <script type="module" src="/js/prompt-lab.js?v=20260315-comic-1"></script>
 </body>
 </html>

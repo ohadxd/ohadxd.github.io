@@ -1,43 +1,100 @@
 "use strict";
 
-const REQUIRED_STEPS = [
-  {
-    key: "character",
-    label: "דמות ראשית",
-    shortLabel: "דמות",
-    placeholder: "למשל: חתול סקרן",
-    missingMessage: "עוד לא בחרת דמות ראשית. כתבו מי מופיע בתמונה."
+const LESSON_DEFINITIONS = {
+  "image-lab": {
+    key: "image-lab",
+    title: "בונים תמונה",
+    shortTitle: "תמונה",
+    description: "בונים רעיון לתמונה אחת ב-5 שלבים קבועים.",
+    generationLimit: 6,
+    generateButtonLabel: "יצירת תמונה",
+    steps: [
+      {
+        key: "character",
+        label: "דמות ראשית",
+        shortLabel: "דמות",
+        placeholder: "למשל: חתול סקרן",
+        missingMessage: "עוד לא בחרת דמות ראשית. כתבו מי מופיע בתמונה."
+      },
+      {
+        key: "place",
+        label: "מקום",
+        shortLabel: "מקום",
+        placeholder: "למשל: יער קסום",
+        missingMessage: "עוד לא בחרת מקום. כתבו איפה הסיפור קורה."
+      },
+      {
+        key: "action",
+        label: "פעולה",
+        shortLabel: "פעולה",
+        placeholder: "למשל: קופץ מעל שלולית",
+        missingMessage: "עוד לא כתבת פעולה. כתבו מה הדמות עושה."
+      },
+      {
+        key: "style",
+        label: "סגנון חזותי",
+        shortLabel: "סגנון",
+        placeholder: "למשל: איור צבעוני לילדים",
+        missingMessage: "עוד לא בחרת סגנון חזותי. כתבו איך התמונה צריכה להיראות."
+      },
+      {
+        key: "detail",
+        label: "פרט מיוחד",
+        shortLabel: "פרט מיוחד",
+        placeholder: "למשל: כובע עם כוכבים זוהרים",
+        missingMessage: "עוד לא הוספת פרט מיוחד. כתבו משהו קטן ומעניין שישלים את התמונה."
+      }
+    ]
   },
-  {
-    key: "place",
-    label: "מקום",
-    shortLabel: "מקום",
-    placeholder: "למשל: יער קסום",
-    missingMessage: "עוד לא בחרת מקום. כתבו איפה הסיפור קורה."
-  },
-  {
-    key: "action",
-    label: "פעולה",
-    shortLabel: "פעולה",
-    placeholder: "למשל: קופץ מעל שלולית",
-    missingMessage: "עוד לא כתבת פעולה. כתבו מה הדמות עושה."
-  },
-  {
-    key: "style",
-    label: "סגנון חזותי",
-    shortLabel: "סגנון",
-    placeholder: "למשל: איור צבעוני לילדים",
-    missingMessage: "עוד לא בחרת סגנון חזותי. כתבו איך התמונה צריכה להיראות."
-  },
-  {
-    key: "detail",
-    label: "פרט מיוחד",
-    shortLabel: "פרט מיוחד",
-    placeholder: "למשל: כובע עם כוכבים זוהרים",
-    missingMessage: "עוד לא הוספת פרט מיוחד. כתבו משהו קטן ומעניין שישלים את התמונה."
+  "comic-lab": {
+    key: "comic-lab",
+    title: "יוצרים קומיקס",
+    shortTitle: "קומיקס",
+    description: "יוצרים סדרת פאנלים עם אותן דמויות קבועות לאורך כל הקומיקס.",
+    generationLimit: 15,
+    generateButtonLabel: "יצירת פאנל קומיקס",
+    steps: [
+      {
+        key: "character",
+        label: "דמויות קבועות",
+        shortLabel: "דמויות",
+        placeholder: "למשל: מאיה ילדה עם שיער מתולתל וטי-שירט צהובה, ורובוט כחול קטן בשם ריבו",
+        missingMessage: "עוד לא בחרת את הדמויות הקבועות. כתבו מי יופיע שוב ושוב בקומיקס."
+      },
+      {
+        key: "place",
+        label: "מה קורה בפאנל",
+        shortLabel: "פאנל",
+        placeholder: "למשל: מאיה וריבו עומדים מול דלת סודית בבית הספר",
+        missingMessage: "עוד לא כתבת מה קורה בפאנל הזה. כתבו מה רואים עכשיו."
+      },
+      {
+        key: "action",
+        label: "מה כל דמות אומרת",
+        shortLabel: "דיבור",
+        placeholder: "למשל: מאיה אומרת: מצאנו את הדלת! ריבו אומר: אני סורק עכשיו",
+        missingMessage: "עוד לא כתבת מה הדמויות אומרות. כתבו משפט קצר לכל דמות."
+      },
+      {
+        key: "style",
+        label: "סגנון הקומיקס",
+        shortLabel: "סגנון",
+        placeholder: "למשל: קומיקס צבעוני לילדים עם קווים נקיים",
+        missingMessage: "עוד לא בחרת סגנון קומיקס. כתבו איך הקומיקס צריך להיראות."
+      },
+      {
+        key: "detail",
+        label: "איך שומרים על עקביות",
+        shortLabel: "עקביות",
+        placeholder: "למשל: מאיה תמיד עם חולצה צהובה, וריבו תמיד כחול עם עיניים ירוקות",
+        missingMessage: "עוד לא כתבת איך לשמור על עקביות. כתבו מה חייב להישאר אותו דבר בכל פאנל."
+      }
+    ]
   }
-];
+};
 
+const DEFAULT_LESSON_KEY = "image-lab";
+const REQUIRED_STEPS = LESSON_DEFINITIONS[DEFAULT_LESSON_KEY].steps;
 const REQUIRED_STEP_KEYS = REQUIRED_STEPS.map((step) => step.key);
 
 const ACTIVITY_CONFIG = {
@@ -57,10 +114,11 @@ const ACTIVITY_CONFIG = {
     projectId: "groovetech-9a3fb",
     storageBucket: "groovetech-9a3fb.firebasestorage.app"
   },
-  defaultGenerationsPerStudent: 6,
+  defaultGenerationsPerStudent: LESSON_DEFINITIONS[DEFAULT_LESSON_KEY].generationLimit,
+  comicGenerationsPerStudent: LESSON_DEFINITIONS["comic-lab"].generationLimit,
   defaultSeatCount: 25,
   seatClaimMinutes: 120,
-  maxStepLength: 160,
+  maxStepLength: 220,
   maxNameLength: 40,
   welcomeMessage:
     "איזה יופי, הצטרפתם לפעילות. עכשיו נבנה פרומפט חכם צעד אחרי צעד.",
@@ -136,6 +194,12 @@ const ACTIVITY_CONFIG = {
     "No text, letters, watermark, or logo unless requested.",
     "Clear subject separation and coherent composition."
   ].join(" "),
+  comicConsistencyInstructionEnglish: [
+    "This is part of a comic series.",
+    "Keep the recurring characters consistent across every panel.",
+    "Keep the same face shape, hairstyle, clothing colors, accessories, body proportions, and overall visual identity in every new panel.",
+    "Use clear comic-panel framing and readable speech-bubble placement."
+  ].join(" "),
   imageNegativePromptEnglish: [
     "extra limbs",
     "extra fingers",
@@ -150,6 +214,8 @@ const ACTIVITY_CONFIG = {
 
 module.exports = {
   ACTIVITY_CONFIG,
+  DEFAULT_LESSON_KEY,
+  LESSON_DEFINITIONS,
   REQUIRED_STEPS,
   REQUIRED_STEP_KEYS
 };

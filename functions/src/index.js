@@ -8,15 +8,23 @@ const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https");
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
-const { ACTIVITY_CONFIG } = require("./config/agentConfig");
 const {
+  ACTIVITY_CONFIG,
+  DEFAULT_LESSON_KEY
+} = require("./config/agentConfig");
+const {
+  buildComicCharacterBlueprintEnglish,
+  buildComicCharacterBlueprintHebrew,
+  buildEmptyPromptSteps,
   buildFinalEnglishPrompt,
   buildFinalHebrewPrompt,
   buildSessionDraft,
   buildValidationResponse,
   containsHebrew,
+  getLessonDefinition,
   normalizeClassCode,
   normalizeSeed,
+  sanitizeLessonKey,
   sanitizePromptSteps,
   sanitizeStudentName
 } = require("./lib/promptFlow");
@@ -327,6 +335,22 @@ function getGenerationLimit(classData) {
   }
 
   return ACTIVITY_CONFIG.defaultGenerationsPerStudent;
+}
+
+function getLessonGenerationLimit(classData, lessonKey = DEFAULT_LESSON_KEY) {
+  const lesson = getLessonDefinition(lessonKey);
+
+  if (lesson.key === "comic-lab") {
+    const rawComicLimit = Number(classData.comicGenerationsPerStudent);
+
+    if (Number.isFinite(rawComicLimit) && rawComicLimit > 0) {
+      return Math.floor(rawComicLimit);
+    }
+
+    return ACTIVITY_CONFIG.comicGenerationsPerStudent;
+  }
+
+  return getGenerationLimit(classData);
 }
 
 function getSeatCount(classData) {
@@ -851,6 +875,18 @@ function buildPromptStepsHash(steps) {
     .digest("hex");
 }
 
+function buildComicBlueprintHash(steps) {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        character: String(steps?.character || ""),
+        style: String(steps?.style || ""),
+        detail: String(steps?.detail || "")
+      })
+    )
+    .digest("hex");
+}
+
 function getCachedTranslatedSteps(sessionData, promptStepsHash) {
   if (!sessionData || sessionData.promptTranslationHash !== promptStepsHash) {
     return null;
@@ -981,6 +1017,7 @@ function buildCreationHistoryItem(usageDoc) {
     imageStoragePath: String(usageData.imageStoragePath || "").trim(),
     finalPromptEnglish: String(usageData.finalPromptEnglish || "").trim(),
     finalPromptHebrew: String(usageData.finalPromptHebrew || "").trim(),
+    lessonKey: sanitizeLessonKey(usageData.lessonKey),
     provider: String(usageData.provider || "").trim(),
     model: String(usageData.model || "").trim(),
     seed: normalizeSeed(usageData.seed),
@@ -1259,12 +1296,14 @@ exports.getSeatMap = onCall(
 
 exports.joinActivity = onCall(getCallableOptions(), async (request) => {
   const studentName = sanitizeStudentName(request.data?.studentName);
+  const lessonKey = sanitizeLessonKey(request.data?.lessonKey);
+  const lesson = getLessonDefinition(lessonKey);
   const { classRef, classData, normalizedCode } = await loadClassAccessCode(
     request.data?.classCode
   );
   const seatCount = getSeatCount(classData);
   const seatNumber = normalizeSeatNumber(request.data?.seatNumber, seatCount);
-  const generationLimit = getGenerationLimit(classData);
+  const generationLimit = getLessonGenerationLimit(classData, lessonKey);
   const sessionRef = db.collection("studentSessions").doc();
   const seatRef = classRef.collection("seats").doc(formatSeatId(seatNumber));
   const now = new Date();
@@ -1273,20 +1312,18 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
     classCode: normalizedCode,
     classLabel: classData.label || "",
     createdAt: FieldValue.serverTimestamp(),
+    comicCharacterBlueprintEnglish: "",
+    comicCharacterBlueprintHash: "",
+    comicCharacterBlueprintHebrew: "",
     currentSeed: null,
     generationsCount: 0,
     generationLimit,
     isPromptComplete: false,
     lastSeenAt: FieldValue.serverTimestamp(),
-    missingStepKeys: ["character", "place", "action", "style", "detail"],
-    promptStepOrder: ["character", "place", "action", "style", "detail"],
-    promptSteps: {
-      character: "",
-      place: "",
-      action: "",
-      style: "",
-      detail: ""
-    },
+    lessonKey: lesson.key,
+    missingStepKeys: lesson.steps.map((step) => step.key),
+    promptStepOrder: lesson.steps.map((step) => step.key),
+    promptSteps: buildEmptyPromptSteps(lesson.key),
     promptTranslationHash: "",
     seatNumber,
     status: "joined",
@@ -1334,6 +1371,7 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
     sessionId: sessionRef.id,
     classCode: normalizedCode,
     classLabel: classData.label || "",
+    lessonKey: lesson.key,
     studentName,
     seatNumber,
     generationLimit,
@@ -1389,22 +1427,23 @@ exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
     sessionId: sessionRef.id,
     classCode: normalizedCode,
     classLabel: classData.label || "",
+    lessonKey: sanitizeLessonKey(sessionData.lessonKey),
     studentName: sessionData.studentName || "תלמיד/ה",
     seatNumber,
-    generationLimit: Number(sessionData.generationLimit || getGenerationLimit(classData)),
+    generationLimit: Number(
+      sessionData.generationLimit ||
+        getLessonGenerationLimit(classData, sanitizeLessonKey(sessionData.lessonKey))
+    ),
     remainingGenerations: Math.max(
-      Number(sessionData.generationLimit || getGenerationLimit(classData)) -
+      Number(
+        sessionData.generationLimit ||
+          getLessonGenerationLimit(classData, sanitizeLessonKey(sessionData.lessonKey))
+      ) -
         Number(sessionData.generationsCount || 0),
       0
     ),
     seed: normalizeSeed(sessionData.currentSeed),
-    promptSteps: sessionData.promptSteps || {
-      character: "",
-      place: "",
-      action: "",
-      style: "",
-      detail: ""
-    },
+    promptSteps: sessionData.promptSteps || buildEmptyPromptSteps(sessionData.lessonKey),
     isPromptComplete: Boolean(sessionData.isPromptComplete),
     message: ACTIVITY_CONFIG.resumeMessage
   };
@@ -1453,10 +1492,11 @@ exports.leaveActivity = onCall(getCallableOptions(), async (request) => {
 exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
   const { classRef } = await loadClassAccessCode(sessionData.classCode);
-  const steps = sanitizePromptSteps(request.data?.steps);
+  const lessonKey = sanitizeLessonKey(sessionData.lessonKey);
+  const steps = sanitizePromptSteps(request.data?.steps, lessonKey);
   const seed = normalizeSeed(request.data?.seed);
-  const validation = buildValidationResponse(steps);
-  const draft = buildSessionDraft(steps, validation);
+  const validation = buildValidationResponse(steps, lessonKey);
+  const draft = buildSessionDraft(steps, validation, lessonKey);
   const promptStepsHash = buildPromptStepsHash(steps);
   const cachedTranslatedSteps = getCachedTranslatedSteps(sessionData, promptStepsHash);
 
@@ -1465,6 +1505,7 @@ exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
       ...draft,
       classCode: sessionData.classCode,
       currentSeed: seed,
+      lessonKey,
       lastSeenAt: FieldValue.serverTimestamp(),
       promptTranslationHash: cachedTranslatedSteps ? promptStepsHash : "",
       status: validation.isComplete ? "ready" : "building",
@@ -1500,15 +1541,18 @@ exports.generateImage = onCall(
     const { classRef, classData, normalizedCode } = await loadClassAccessCode(
       sessionData.classCode
     );
-    const steps = sanitizePromptSteps(request.data?.steps || sessionData.promptSteps);
+    const lessonKey = sanitizeLessonKey(sessionData.lessonKey);
+    const steps = sanitizePromptSteps(request.data?.steps || sessionData.promptSteps, lessonKey);
     const seed = normalizeSeed(request.data?.seed ?? sessionData.currentSeed);
-    const validation = buildValidationResponse(steps);
+    const validation = buildValidationResponse(steps, lessonKey);
     const promptStepsHash = buildPromptStepsHash(steps);
+    const comicBlueprintHash = buildComicBlueprintHash(steps);
 
     if (!validation.isComplete) {
     await sessionRef.set(
       {
-        ...buildSessionDraft(steps, validation),
+        ...buildSessionDraft(steps, validation, lessonKey),
+        lessonKey,
         lastSeenAt: FieldValue.serverTimestamp(),
         promptTranslationHash: "",
         status: "building",
@@ -1533,7 +1577,7 @@ exports.generateImage = onCall(
       };
     }
 
-    const generationLimit = getGenerationLimit(classData);
+    const generationLimit = getLessonGenerationLimit(classData, lessonKey);
     const generationsCount = Number(sessionData.generationsCount || 0);
 
     if (generationsCount >= generationLimit) {
@@ -1551,13 +1595,14 @@ exports.generateImage = onCall(
     let finalPromptHebrew;
     let finalPromptEnglish;
     let translatedPromptStepsEnglish;
+    let comicCharacterBlueprintEnglish = "";
+    let comicCharacterBlueprintHebrew = "";
     let image;
     let provider = providerSelection.provider;
     let model = providerSelection.imageModel;
     let effectiveSeed = providerSelection.supportsSeed ? seed : null;
 
     try {
-      finalPromptHebrew = buildFinalHebrewPrompt(steps);
       const geminiApiKey = normalizeSecretValue(GEMINI_API_KEY.value());
 
       if (!geminiApiKey) {
@@ -1568,10 +1613,35 @@ exports.generateImage = onCall(
       translatedPromptStepsEnglish =
         getCachedTranslatedSteps(sessionData, promptStepsHash) ||
         await translateStepsToEnglish(ai, steps);
+
+      if (lessonKey === "comic-lab") {
+        const hasCachedBlueprint =
+          sessionData.comicCharacterBlueprintHash === comicBlueprintHash &&
+          sessionData.comicCharacterBlueprintEnglish &&
+          sessionData.comicCharacterBlueprintHebrew;
+
+        comicCharacterBlueprintEnglish = hasCachedBlueprint
+          ? String(sessionData.comicCharacterBlueprintEnglish || "").trim()
+          : buildComicCharacterBlueprintEnglish(translatedPromptStepsEnglish);
+        comicCharacterBlueprintHebrew = hasCachedBlueprint
+          ? String(sessionData.comicCharacterBlueprintHebrew || "").trim()
+          : buildComicCharacterBlueprintHebrew(steps);
+      }
+
       finalPromptEnglish = buildFinalEnglishPrompt(
         translatedPromptStepsEnglish,
-        ACTIVITY_CONFIG.imagePromptGuardrailsEnglish
+        ACTIVITY_CONFIG.imagePromptGuardrailsEnglish,
+        lessonKey,
+        {
+          characterBlueprintEnglish: comicCharacterBlueprintEnglish,
+          originalSteps: steps,
+          panelNumber: generationsCount + 1
+        }
       );
+      finalPromptHebrew = buildFinalHebrewPrompt(steps, lessonKey, {
+        characterBlueprintHebrew: comicCharacterBlueprintHebrew,
+        panelNumber: generationsCount + 1
+      });
 
       if (providerSelection.provider === "openai") {
         const openAiApiKey = normalizeSecretValue(OPENAI_API_KEY.value());
@@ -1617,7 +1687,13 @@ exports.generateImage = onCall(
 
     await sessionRef.set(
       {
-        ...buildSessionDraft(steps, validation),
+        ...buildSessionDraft(steps, validation, lessonKey),
+        comicCharacterBlueprintEnglish:
+          lessonKey === "comic-lab" ? comicCharacterBlueprintEnglish : "",
+        comicCharacterBlueprintHash:
+          lessonKey === "comic-lab" ? comicBlueprintHash : "",
+        comicCharacterBlueprintHebrew:
+          lessonKey === "comic-lab" ? comicCharacterBlueprintHebrew : "",
         generationsCount: FieldValue.increment(1),
         lastGeneratedAt: FieldValue.serverTimestamp(),
         lastGeneratedImagePath: storedImage.imageStoragePath || "",
@@ -1629,6 +1705,7 @@ exports.generateImage = onCall(
         currentSeed: effectiveSeed,
         lastUsedSeed: effectiveSeed,
         lastSeenAt: FieldValue.serverTimestamp(),
+        lessonKey,
         promptTranslationHash: promptStepsHash,
         status: "generated",
         translatedPromptStepsEnglish,
@@ -1660,6 +1737,7 @@ exports.generateImage = onCall(
       imageDownloadUrl: storedImage.imageDownloadUrl || "",
       imageMimeType: image.mimeType,
       imageStoragePath: storedImage.imageStoragePath || "",
+      lessonKey,
       model,
       provider,
       seed: effectiveSeed,
@@ -1682,7 +1760,10 @@ exports.generateImage = onCall(
       seed: effectiveSeed,
       seedApplied: providerSelection.supportsSeed,
       usageId: usageRef.id,
-      message: ACTIVITY_CONFIG.generationSuccess
+      message:
+        lessonKey === "comic-lab"
+          ? "כל הכבוד. יצרתם פאנל קומיקס חדש, והדמויות נשמרו עקביות גם לפעם הבאה."
+          : ACTIVITY_CONFIG.generationSuccess
     };
   }
 );
