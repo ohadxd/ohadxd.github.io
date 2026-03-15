@@ -33,6 +33,7 @@ const createClassForm = document.getElementById("createClassForm");
 const createClassButton = document.getElementById("createClassButton");
 const newClassCodeInput = document.getElementById("newClassCode");
 const newClassLabelInput = document.getElementById("newClassLabel");
+const newClassLessonSelect = document.getElementById("newClassLesson");
 const newClassSeatsInput = document.getElementById("newClassSeats");
 const newClassLimitInput = document.getElementById("newClassLimit");
 const promptLabSettingsForm = document.getElementById("promptLabSettingsForm");
@@ -180,6 +181,7 @@ function buildClassCard(item) {
   meta.textContent = item.label || "ללא תיאור";
   stats.innerHTML = [
     `<span class="pill">${item.isActive ? "פתוחה" : "סגורה"}</span>`,
+    `<span class="pill">${item.lessonTitle || item.lessonKey || "שיעור"}</span>`,
     `<span class="pill">${item.seatCount} מקומות</span>`,
     `<span class="pill">${item.allowedGenerationsPerStudent} יצירות</span>`,
     `<span class="pill">${item.totalGenerations || 0} יצירות בפועל</span>`
@@ -505,10 +507,12 @@ createClassForm.addEventListener("submit", async (event) => {
   setBusy(createClassButton, true, "יצירת קוד כיתה", "יוצר...");
 
   try {
+    const lessonKey = newClassLessonSelect.value || "image-lab";
     const response = await adminUpsertClassCallable({
       sessionToken: state.sessionToken,
       classCode: newClassCodeInput.value,
       label: newClassLabelInput.value,
+      lessonKey,
       seatCount: Number(newClassSeatsInput.value),
       allowedGenerationsPerStudent: Number(newClassLimitInput.value),
       isActive: true
@@ -516,14 +520,30 @@ createClassForm.addEventListener("submit", async (event) => {
     replaceClassItem(response.data.item);
     renderClassGrid();
     createClassForm.reset();
+    newClassLessonSelect.value = "image-lab";
     newClassSeatsInput.value = "25";
     newClassLimitInput.value = "6";
-    showStatus("good", "נוצר קוד כיתה", `${response.data.item.code} מוכן לשימוש.`);
+    showStatus(
+      "good",
+      "נוצר קוד כיתה",
+      `${response.data.item.code} מוכן לשימוש עבור ${response.data.item.lessonTitle || response.data.item.lessonKey}.`
+    );
   } catch (error) {
     showStatus("bad", "לא נוצר קוד כיתה", error.message || "בדקו את הנתונים ונסו שוב.");
   } finally {
     setBusy(createClassButton, false, "יצירת קוד כיתה", "יוצר...");
   }
+});
+
+newClassLessonSelect.addEventListener("change", () => {
+  if (newClassLessonSelect.value === "comic-lab") {
+    newClassSeatsInput.value = "15";
+    newClassLimitInput.value = "10";
+    return;
+  }
+
+  newClassSeatsInput.value = "25";
+  newClassLimitInput.value = "6";
 });
 
 promptLabSettingsForm.addEventListener("submit", async (event) => {

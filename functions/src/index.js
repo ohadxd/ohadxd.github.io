@@ -234,14 +234,20 @@ async function requireAdminSession(sessionToken) {
 
 function serializeClassAccessCode(classDoc) {
   const data = classDoc.data() || {};
+  const lessonKey = sanitizeLessonKey(data.lessonKey || DEFAULT_LESSON_KEY);
+  const lesson = getLessonDefinition(lessonKey);
 
   return {
     code: classDoc.id,
     label: String(data.label || "").trim(),
     isActive: data.isActive !== false,
     activitySlug: String(data.activitySlug || ACTIVITY_CONFIG.activitySlug).trim() || ACTIVITY_CONFIG.activitySlug,
+    lessonKey,
+    lessonTitle: lesson.title,
     seatCount: getSeatCount(data),
     allowedGenerationsPerStudent: getGenerationLimit(data),
+    comicSeatCount: getLessonSeatCount(data, "comic-lab"),
+    comicGenerationsPerStudent: getLessonGenerationLimit(data, "comic-lab"),
     totalGenerations: Number(data.totalGenerations || 0),
     totalSessions: Number(data.totalSessions || 0),
     participantsCount: Number(data.participantsCount || 0),
@@ -254,6 +260,13 @@ function sanitizeClassAdminPayload(rawData = {}) {
   const label = String(rawData.label || "").trim().slice(0, 80);
   const seatCount = Number(rawData.seatCount);
   const allowedGenerationsPerStudent = Number(rawData.allowedGenerationsPerStudent);
+  const lessonKey = sanitizeLessonKey(rawData.lessonKey || DEFAULT_LESSON_KEY);
+  const defaultSeatCount =
+    lessonKey === "comic-lab" ? ACTIVITY_CONFIG.comicSeatCount : ACTIVITY_CONFIG.defaultSeatCount;
+  const defaultGenerationLimit =
+    lessonKey === "comic-lab"
+      ? ACTIVITY_CONFIG.comicGenerationsPerStudent
+      : ACTIVITY_CONFIG.defaultGenerationsPerStudent;
 
   if (!code) {
     throw new HttpsError("invalid-argument", "יש להזין קוד כיתה תקין.");
@@ -262,22 +275,24 @@ function sanitizeClassAdminPayload(rawData = {}) {
   return {
     classCode: code,
     label: label || code,
+    lessonKey,
     isActive: rawData.isActive !== false,
     seatCount:
       Number.isInteger(seatCount) && seatCount >= 1 && seatCount <= 60
         ? seatCount
-        : ACTIVITY_CONFIG.defaultSeatCount,
+        : defaultSeatCount,
     allowedGenerationsPerStudent:
       Number.isInteger(allowedGenerationsPerStudent) &&
       allowedGenerationsPerStudent >= 1 &&
       allowedGenerationsPerStudent <= 20
         ? allowedGenerationsPerStudent
-        : ACTIVITY_CONFIG.defaultGenerationsPerStudent
+        : defaultGenerationLimit
   };
 }
 
-async function loadClassAccessCode(classCode) {
+async function loadClassAccessCode(classCode, lessonKey = DEFAULT_LESSON_KEY) {
   const normalizedCode = normalizeClassCode(classCode);
+  const requestedLessonKey = sanitizeLessonKey(lessonKey);
 
   if (!normalizedCode) {
     throw new HttpsError("invalid-argument", "יש להזין קוד כיתה.");
@@ -301,6 +316,12 @@ async function loadClassAccessCode(classCode) {
     throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.invalidClassCode);
   }
 
+  const classLessonKey = sanitizeLessonKey(classData.lessonKey || DEFAULT_LESSON_KEY);
+
+  if (classLessonKey !== requestedLessonKey) {
+    throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.invalidLessonCode);
+  }
+
   if (expiresAt && expiresAt.getTime() <= Date.now()) {
     throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.expiredClassCode);
   }
@@ -308,6 +329,7 @@ async function loadClassAccessCode(classCode) {
   return {
     classRef,
     classData,
+    classLessonKey,
     normalizedCode
   };
 }
@@ -1139,9 +1161,16 @@ exports.adminUpsertClass = onCall(getCallableOptions(), async (request) => {
     {
       activitySlug: ACTIVITY_CONFIG.activitySlug,
       allowedGenerationsPerStudent: payload.allowedGenerationsPerStudent,
+      comicGenerationsPerStudent:
+        payload.lessonKey === "comic-lab"
+          ? payload.allowedGenerationsPerStudent
+          : ACTIVITY_CONFIG.comicGenerationsPerStudent,
       isActive: payload.isActive,
       label: payload.label,
+      lessonKey: payload.lessonKey,
       seatCount: payload.seatCount,
+      comicSeatCount:
+        payload.lessonKey === "comic-lab" ? payload.seatCount : ACTIVITY_CONFIG.comicSeatCount,
       updatedAt: FieldValue.serverTimestamp()
     },
     { merge: true }
@@ -1301,7 +1330,8 @@ exports.getSeatMap = onCall(
   }),
   async (request) => {
   const { classRef, classData, normalizedCode } = await loadClassAccessCode(
-    request.data?.classCode
+    request.data?.classCode,
+    request.data?.lessonKey
   );
   const seatMapPayload = await buildSeatMapPayload(classRef, classData, normalizedCode);
   const webApiKey = normalizeSecretValue(PROMPT_LAB_WEB_API_KEY.value());
@@ -1319,7 +1349,8 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
   const lessonKey = sanitizeLessonKey(request.data?.lessonKey);
   const lesson = getLessonDefinition(lessonKey);
   const { classRef, classData, normalizedCode } = await loadClassAccessCode(
-    request.data?.classCode
+    request.data?.classCode,
+    lessonKey
   );
   const seatCount = getLessonSeatCount(classData, lessonKey);
   const seatNumber = normalizeSeatNumber(request.data?.seatNumber, seatCount);
@@ -1405,7 +1436,8 @@ exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
   const lessonKey = sanitizeLessonKey(sessionData.lessonKey);
   const { classRef, classData, normalizedCode } = await loadClassAccessCode(
-    sessionData.classCode
+    sessionData.classCode,
+    lessonKey
   );
   const seatCount = getLessonSeatCount(classData, lessonKey);
   const seatNumber = normalizeSeatNumber(sessionData.seatNumber, seatCount);
@@ -1482,7 +1514,11 @@ exports.getStudentCreations = onCall(getCallableOptions(), async (request) => {
 
 exports.leaveActivity = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
-  const { classRef, classData, normalizedCode } = await loadClassAccessCode(sessionData.classCode);
+  const lessonKey = sanitizeLessonKey(sessionData.lessonKey);
+  const { classRef, classData, normalizedCode } = await loadClassAccessCode(
+    sessionData.classCode,
+    lessonKey
+  );
   const seatNumber = Number(sessionData.seatNumber || 0);
 
   await sessionRef.set(
@@ -1512,8 +1548,8 @@ exports.leaveActivity = onCall(getCallableOptions(), async (request) => {
 
 exports.validatePromptSteps = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
-  const { classRef } = await loadClassAccessCode(sessionData.classCode);
   const lessonKey = sanitizeLessonKey(sessionData.lessonKey);
+  const { classRef } = await loadClassAccessCode(sessionData.classCode, lessonKey);
   const steps = sanitizePromptSteps(request.data?.steps, lessonKey);
   const seed = normalizeSeed(request.data?.seed);
   const validation = buildValidationResponse(steps, lessonKey);
@@ -1559,10 +1595,11 @@ exports.generateImage = onCall(
   }),
   async (request) => {
     const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
-    const { classRef, classData, normalizedCode } = await loadClassAccessCode(
-      sessionData.classCode
-    );
     const lessonKey = sanitizeLessonKey(sessionData.lessonKey);
+    const { classRef, classData, normalizedCode } = await loadClassAccessCode(
+      sessionData.classCode,
+      lessonKey
+    );
     const steps = sanitizePromptSteps(request.data?.steps || sessionData.promptSteps, lessonKey);
     const seed = normalizeSeed(request.data?.seed ?? sessionData.currentSeed);
     const validation = buildValidationResponse(steps, lessonKey);

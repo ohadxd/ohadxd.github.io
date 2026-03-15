@@ -1713,7 +1713,10 @@ async function loadSeatMap({ showErrors = false } = {}) {
   refreshSeatsButton.disabled = true;
 
   try {
-    const response = await getSeatMapCallable({ classCode });
+    const response = await getSeatMapCallable({
+      classCode,
+      lessonKey: state.lessonKey
+    });
     const payload = response.data;
     applySeatMapPayload(payload);
     if (!state.sessionId) {
