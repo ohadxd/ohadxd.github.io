@@ -205,7 +205,6 @@ function buildFinalEnglishPrompt(
   if (lesson.key === "comic-lab") {
     const panelScene = sanitizeEnglishPromptField(steps.place);
     const dialogueEnglish = sanitizeEnglishPromptField(steps.action);
-    const originalDialogueHebrew = sanitizePromptField(extra.originalSteps?.action || "");
     const characterBlueprintEnglish = sanitizeEnglishPromptField(
       extra.characterBlueprintEnglish || buildComicCharacterBlueprintEnglish(steps)
     );
@@ -216,14 +215,10 @@ function buildFinalEnglishPrompt(
       `Current panel scene: ${panelScene}.`,
       `Dialogue intent for this panel: ${dialogueEnglish}.`,
       `Comic visual style: ${sanitizeEnglishPromptField(steps.style)}.`,
-      "High quality comic panel, expressive faces, clear framing, readable bubble placement, rich detail."
+      "High quality comic panel, expressive faces, clear framing, rich detail.",
+      "Do not render printed text, letters, captions, speech bubbles, subtitles, watermark, or logo.",
+      "Leave clean negative space near the speaking characters so dialogue can be added later in the app."
     ];
-
-    if (originalDialogueHebrew) {
-      parts.push(
-        `If speech bubbles are shown, prefer short readable Hebrew based on this original dialogue: ${originalDialogueHebrew}.`
-      );
-    }
 
     if (extra.panelNumber) {
       parts.push(`Panel number in this comic sequence: ${extra.panelNumber}.`);

@@ -9,13 +9,42 @@ import {
   setRealtimeClientConfig,
   subscribeSeatMap,
   validatePromptStepsCallable
-} from "/js/functions-client.js?v=20260315-comic-1";
+} from "/js/functions-client.js?v=20260315-comic-2";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
 const AUTOSAVE_DELAY_MS = 1400;
 const SEAT_POLL_MS = 30000;
 const DEFAULT_LESSON_KEY = "image-lab";
+const COMIC_VISIBLE_SEAT_COUNT = 15;
+const COMIC_MAX_BUBBLES = 4;
+const COMIC_DIALOGUE_MAX_CHARS = 84;
+const COMIC_SPEAKER_MAX_CHARS = 26;
+const COMIC_DOWNLOAD_WIDTH = 1600;
+const COMIC_DIALOGUE_VERB_PATTERN =
+  "(?:אומר(?:ת|ים|ות)?|שואל(?:ת|ים|ות)?|צועק(?:ת|ים|ות)?|לוחש(?:ת|ים|ות)?|עונה(?:ים|ות)?|קורא(?:ת|ים|ות)?|חושב(?:ת|ים|ות)?)";
+const COMIC_DIALOGUE_REGEX = new RegExp(
+  `([^:\\n,.!?]{1,32}?)\\s+${COMIC_DIALOGUE_VERB_PATTERN}\\s*:\\s*(.+?)(?=(?:\\s+[^:\\n,.!?]{1,32}?\\s+${COMIC_DIALOGUE_VERB_PATTERN}\\s*:)|$)`,
+  "g"
+);
+const COMIC_LAYOUTS = {
+  1: [{ left: 0.57, top: 0.06, width: 0.33, minHeight: 0.16, tail: "right" }],
+  2: [
+    { left: 0.08, top: 0.07, width: 0.32, minHeight: 0.16, tail: "left" },
+    { left: 0.57, top: 0.07, width: 0.32, minHeight: 0.16, tail: "right" }
+  ],
+  3: [
+    { left: 0.08, top: 0.07, width: 0.3, minHeight: 0.15, tail: "left" },
+    { left: 0.6, top: 0.08, width: 0.28, minHeight: 0.15, tail: "right" },
+    { left: 0.57, top: 0.69, width: 0.31, minHeight: 0.16, tail: "right" }
+  ],
+  4: [
+    { left: 0.07, top: 0.07, width: 0.29, minHeight: 0.15, tail: "left" },
+    { left: 0.62, top: 0.08, width: 0.25, minHeight: 0.15, tail: "right" },
+    { left: 0.58, top: 0.66, width: 0.3, minHeight: 0.16, tail: "right" },
+    { left: 0.08, top: 0.68, width: 0.28, minHeight: 0.15, tail: "left" }
+  ]
+};
 
 const LESSON_DEFINITIONS = {
   "image-lab": {
@@ -95,9 +124,9 @@ const LESSON_DEFINITIONS = {
   "comic-lab": {
     key: "comic-lab",
     leadText:
-      "במסלול הזה יוצרים סדרת פאנלים לקומיקס. אותן דמויות נשארות קבועות, וכל פעם משנים מה קורה ומה הן אומרות.",
+      "במסלול הזה יוצרים סדרת פאנלים לקומיקס. אותן דמויות נשארות קבועות, כל תלמיד מקבל עד 10 פאנלים, ופתוחים עד 15 מקומות.",
     activityHeading: "יוצרים פאנל קומיקס",
-    activityIntro: "מגדירים את הדמויות הקבועות, כותבים מה קורה בפאנל ומה כל דמות אומרת, ואז יוצרים.",
+    activityIntro: "מגדירים את הדמויות הקבועות, כותבים מה קורה בפאנל ומה כל דמות אומרת, והמערכת מוסיפה בועות דיבור מקצועיות.",
     generateButtonLabel: "יצירת פאנל קומיקס",
     emptyGalleryText: "עדיין אין כאן פאנלים. כשתיצרו את הפאנל הראשון, כל הקומיקס שלכם יישמר כאן להשוואה.",
     quickItems: [
@@ -108,7 +137,7 @@ const LESSON_DEFINITIONS = {
       "5. מזכירים מה חייב להישאר אותו דבר בכל פאנל."
     ],
     guardrailText:
-      "מאחורי הקלעים המערכת שומרת על אותן דמויות לאורך כל הסדרה, כדי שהקומיקס ירגיש עקבי וברור.",
+      "מאחורי הקלעים המערכת שומרת על אותן דמויות לאורך כל הסדרה, ומוסיפה אחר כך בועות דיבור ברורות בעברית כדי שהקומיקס ייראה מקצועי.",
     steps: {
       character: {
         label: "1. דמויות קבועות",
@@ -190,7 +219,9 @@ const remainingBadge = document.getElementById("remainingBadge");
 const selectedSeatBadge = document.getElementById("selectedSeatBadge");
 const seatStatusText = document.getElementById("seatStatusText");
 const seatBoard = document.getElementById("seatBoard");
+const resultVisualStage = document.getElementById("resultVisualStage");
 const imagePreview = document.getElementById("imagePreview");
+const resultComicOverlay = document.getElementById("resultComicOverlay");
 const downloadImageButton = document.getElementById("downloadImageButton");
 const savedImageNote = document.getElementById("savedImageNote");
 const finalPromptOutput = document.getElementById("finalPromptOutput");
@@ -346,6 +377,469 @@ function buildCreationSummary(creation) {
     creation?.stepSnapshot || buildEmptySteps(creation?.lessonKey),
     creation?.lessonKey || state.lessonKey
   );
+}
+
+function isComicLesson(lessonKey = state.lessonKey) {
+  return normalizeLessonKey(lessonKey) === "comic-lab";
+}
+
+function isComicCreation(creation) {
+  return isComicLesson(creation?.lessonKey || state.lessonKey);
+}
+
+function getVisibleSeatLimit() {
+  return isComicLesson() ? COMIC_VISIBLE_SEAT_COUNT : Number.POSITIVE_INFINITY;
+}
+
+function getVisibleSeats(seats = state.seatMap) {
+  const limit = getVisibleSeatLimit();
+  return Array.isArray(seats) ? seats.filter((seat) => Number(seat?.seatNumber || 0) <= limit) : [];
+}
+
+function sanitizeDialogueChunk(value, maxLength) {
+  return String(value || "")
+    .replace(/[\u200E\u200F]+/g, "")
+    .replace(/[“”"']/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+function parseComicDialogue(rawDialogue) {
+  const source = sanitizeDialogueChunk(rawDialogue, 420);
+  const entries = [];
+
+  if (!source) {
+    return entries;
+  }
+
+  COMIC_DIALOGUE_REGEX.lastIndex = 0;
+
+  for (const match of source.matchAll(COMIC_DIALOGUE_REGEX)) {
+    const speaker = sanitizeDialogueChunk(match[1], COMIC_SPEAKER_MAX_CHARS);
+    const text = sanitizeDialogueChunk(match[2], COMIC_DIALOGUE_MAX_CHARS);
+
+    if (speaker && text) {
+      entries.push({ speaker, text });
+    }
+  }
+
+  if (entries.length) {
+    return entries.slice(0, COMIC_MAX_BUBBLES);
+  }
+
+  const simpleParts = source
+    .split(/\n+|[;|]+/g)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  for (const part of simpleParts) {
+    const namedMatch = part.match(/^([^:]{1,32})\s*:\s*(.+)$/);
+
+    if (namedMatch) {
+      entries.push({
+        speaker: sanitizeDialogueChunk(namedMatch[1], COMIC_SPEAKER_MAX_CHARS),
+        text: sanitizeDialogueChunk(namedMatch[2], COMIC_DIALOGUE_MAX_CHARS)
+      });
+      continue;
+    }
+
+    entries.push({
+      speaker: "",
+      text: sanitizeDialogueChunk(part, COMIC_DIALOGUE_MAX_CHARS)
+    });
+  }
+
+  if (!entries.length) {
+    entries.push({
+      speaker: "",
+      text: sanitizeDialogueChunk(source, COMIC_DIALOGUE_MAX_CHARS)
+    });
+  }
+
+  if (entries.length <= COMIC_MAX_BUBBLES) {
+    return entries;
+  }
+
+  const limitedEntries = entries.slice(0, COMIC_MAX_BUBBLES);
+  const overflowText = entries
+    .slice(COMIC_MAX_BUBBLES - 1)
+    .map((entry) => `${entry.speaker ? `${entry.speaker}: ` : ""}${entry.text}`)
+    .join(" | ");
+
+  limitedEntries[COMIC_MAX_BUBBLES - 1] = {
+    speaker: limitedEntries[COMIC_MAX_BUBBLES - 1].speaker,
+    text: sanitizeDialogueChunk(overflowText, COMIC_DIALOGUE_MAX_CHARS)
+  };
+
+  return limitedEntries;
+}
+
+function buildComicBubbleLayout(entries) {
+  const safeEntries = entries.slice(0, COMIC_MAX_BUBBLES);
+  const layout = COMIC_LAYOUTS[safeEntries.length] || COMIC_LAYOUTS[COMIC_MAX_BUBBLES];
+
+  return safeEntries.map((entry, index) => ({
+    ...layout[index],
+    speaker: entry.speaker,
+    text: entry.text
+  }));
+}
+
+function clearComicOverlay(container) {
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = "";
+  container.hidden = true;
+}
+
+function renderComicOverlay(container, creation) {
+  if (!container) {
+    return;
+  }
+
+  clearComicOverlay(container);
+
+  if (!isComicCreation(creation)) {
+    return;
+  }
+
+  const dialogueEntries = parseComicDialogue(creation?.stepSnapshot?.action || "");
+
+  if (!dialogueEntries.length) {
+    return;
+  }
+
+  const bubbles = buildComicBubbleLayout(dialogueEntries);
+
+  for (const bubble of bubbles) {
+    const bubbleElement = document.createElement("div");
+    const speaker = document.createElement("div");
+    const text = document.createElement("div");
+
+    bubbleElement.className = `comic-bubble tail-${bubble.tail}`;
+    bubbleElement.style.left = `${bubble.left * 100}%`;
+    bubbleElement.style.top = `${bubble.top * 100}%`;
+    bubbleElement.style.width = `${bubble.width * 100}%`;
+    bubbleElement.style.minHeight = `${bubble.minHeight * 100}%`;
+
+    if (bubble.speaker) {
+      speaker.className = "comic-bubble-speaker";
+      speaker.textContent = bubble.speaker;
+      bubbleElement.appendChild(speaker);
+    }
+
+    text.className = "comic-bubble-text";
+    text.textContent = bubble.text;
+    bubbleElement.appendChild(text);
+    container.appendChild(bubbleElement);
+  }
+
+  container.hidden = false;
+}
+
+function renderCreationVisual(stageElement, imageElement, overlayElement, creation) {
+  if (!stageElement || !imageElement) {
+    return;
+  }
+
+  const previewUrl = getCreationPreviewUrl(creation);
+
+  if (!previewUrl) {
+    imageElement.removeAttribute("src");
+    clearComicOverlay(overlayElement);
+    return;
+  }
+
+  imageElement.src = previewUrl;
+  stageElement.classList.toggle("is-comic", isComicCreation(creation));
+  renderComicOverlay(overlayElement, creation);
+}
+
+function findCreationByUsageId(usageId) {
+  return state.generationHistory.find((creation) => creation.usageId === usageId) || null;
+}
+
+function getFeaturedCreation() {
+  return findCreationByUsageId(state.featuredUsageId) || state.generationHistory[0] || null;
+}
+
+async function loadImageElement(sourceUrl) {
+  const image = new Image();
+  image.decoding = "async";
+  image.referrerPolicy = "no-referrer";
+
+  return new Promise((resolve, reject) => {
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("לא הצלחתי לטעון את התמונה לייצוא."));
+    image.src = sourceUrl;
+  });
+}
+
+function roundedRectPath(context, x, y, width, height, radius) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.arcTo(x + width, y, x + width, y + height, radius);
+  context.arcTo(x + width, y + height, x, y + height, radius);
+  context.arcTo(x, y + height, x, y, radius);
+  context.arcTo(x, y, x + width, y, radius);
+  context.closePath();
+}
+
+function buildWrappedLines(context, text, maxWidth) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+
+    if (context.measureText(nextLine).width <= maxWidth || !currentLine) {
+      currentLine = nextLine;
+      continue;
+    }
+
+    lines.push(currentLine);
+    currentLine = word;
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+function fitBubbleText(context, bubble, boxWidth, boxHeight) {
+  let fontSize = Math.max(24, Math.round(boxWidth * 0.09));
+  let speakerFontSize = Math.round(fontSize * 0.52);
+  let lines = [];
+  let lineHeight = 0;
+  const textWidth = boxWidth - 28;
+  const speaker = bubble.speaker ? `${bubble.speaker}` : "";
+  const body = bubble.text || "";
+
+  while (fontSize >= 14) {
+    context.font = `700 ${fontSize}px "Noto Sans Hebrew", "Assistant", Arial, sans-serif`;
+    lines = buildWrappedLines(context, body, textWidth);
+    lineHeight = Math.round(fontSize * 1.24);
+    const speakerHeight = speaker ? Math.round(speakerFontSize * 1.4) : 0;
+    const totalHeight = speakerHeight + lines.length * lineHeight + 26;
+
+    if (lines.length <= 4 && totalHeight <= boxHeight) {
+      return {
+        fontSize,
+        speakerFontSize,
+        lines,
+        lineHeight
+      };
+    }
+
+    fontSize -= 1;
+    speakerFontSize = Math.round(fontSize * 0.52);
+  }
+
+  context.font = `700 14px "Noto Sans Hebrew", "Assistant", Arial, sans-serif`;
+  lines = buildWrappedLines(context, body, textWidth).slice(0, 4);
+
+  if (lines.length === 4) {
+    lines[3] = `${lines[3].slice(0, 20).trim()}...`;
+  }
+
+  return {
+    fontSize: 14,
+    speakerFontSize: 10,
+    lines,
+    lineHeight: 18
+  };
+}
+
+function drawBubbleOnCanvas(context, bubble, imageWidth, imageHeight) {
+  const boxX = Math.round(bubble.left * imageWidth);
+  const boxY = Math.round(bubble.top * imageHeight);
+  const boxWidth = Math.round(bubble.width * imageWidth);
+  const minHeight = Math.round(bubble.minHeight * imageHeight);
+  const tailSize = Math.max(18, Math.round(imageWidth * 0.018));
+  const radius = Math.max(18, Math.round(imageWidth * 0.018));
+  const shadowBlur = Math.max(10, Math.round(imageWidth * 0.014));
+  const textMetrics = fitBubbleText(context, bubble, boxWidth, minHeight + 40);
+  const speakerHeight = bubble.speaker ? Math.round(textMetrics.speakerFontSize * 1.45) : 0;
+  const boxHeight = Math.max(
+    minHeight,
+    24 + speakerHeight + textMetrics.lines.length * textMetrics.lineHeight + 18
+  );
+
+  context.save();
+  context.shadowColor = "rgba(31, 61, 104, 0.18)";
+  context.shadowBlur = shadowBlur;
+  context.shadowOffsetY = Math.max(8, Math.round(imageHeight * 0.01));
+  context.fillStyle = "rgba(255, 255, 255, 0.96)";
+  roundedRectPath(context, boxX, boxY, boxWidth, boxHeight, radius);
+  context.fill();
+  context.restore();
+
+  context.save();
+  context.strokeStyle = "#1f3d68";
+  context.lineWidth = Math.max(3, Math.round(imageWidth * 0.003));
+  context.fillStyle = "rgba(255, 255, 255, 0.96)";
+  roundedRectPath(context, boxX, boxY, boxWidth, boxHeight, radius);
+  context.fill();
+  context.stroke();
+
+  const tailBaseY = bubble.tail === "left" ? boxY + boxHeight - tailSize * 1.2 : boxY + boxHeight - tailSize * 1.15;
+  const tailBaseX = bubble.tail === "left" ? boxX + boxWidth * 0.18 : boxX + boxWidth * 0.82;
+  context.beginPath();
+  context.moveTo(tailBaseX, tailBaseY);
+  context.lineTo(
+    bubble.tail === "left" ? tailBaseX - tailSize * 1.2 : tailBaseX + tailSize * 1.2,
+    tailBaseY + tailSize * 0.4
+  );
+  context.lineTo(
+    bubble.tail === "left" ? tailBaseX + tailSize * 0.25 : tailBaseX - tailSize * 0.25,
+    tailBaseY - tailSize * 0.15
+  );
+  context.closePath();
+  context.fill();
+  context.stroke();
+
+  context.direction = "rtl";
+  context.textAlign = "right";
+  context.fillStyle = "#102b47";
+
+  let cursorY = boxY + 24;
+  const textX = boxX + boxWidth - 14;
+
+  if (bubble.speaker) {
+    context.font = `800 ${textMetrics.speakerFontSize}px "Noto Sans Hebrew", "Assistant", Arial, sans-serif`;
+    context.fillText(bubble.speaker, textX, cursorY + textMetrics.speakerFontSize);
+    cursorY += speakerHeight;
+  }
+
+  context.font = `700 ${textMetrics.fontSize}px "Noto Sans Hebrew", "Assistant", Arial, sans-serif`;
+
+  for (const line of textMetrics.lines) {
+    cursorY += textMetrics.lineHeight;
+    context.fillText(line, textX, cursorY);
+  }
+
+  context.restore();
+}
+
+async function buildComicCompositeBlob(creation) {
+  const dialogueEntries = parseComicDialogue(creation?.stepSnapshot?.action || "");
+
+  if (!dialogueEntries.length) {
+    return null;
+  }
+
+  let sourceUrl = getCreationPreviewUrl(creation);
+  let revokeSourceUrl = null;
+
+  if (creation?.usageId && creation?.imageStoragePath) {
+    const response = await fetch(
+      getDownloadGeneratedImageUrl(creation.usageId, buildCreationFilename(creation))
+    );
+
+    if (!response.ok) {
+      throw new Error("לא הצלחתי למשוך את האיור מהשרת.");
+    }
+
+    const imageBlob = await response.blob();
+    sourceUrl = URL.createObjectURL(imageBlob);
+    revokeSourceUrl = sourceUrl;
+  }
+
+  if (!sourceUrl) {
+    return null;
+  }
+
+  try {
+    const baseImage = await loadImageElement(sourceUrl);
+    const scale = baseImage.naturalWidth > COMIC_DOWNLOAD_WIDTH
+      ? 1
+      : COMIC_DOWNLOAD_WIDTH / Math.max(baseImage.naturalWidth, 1);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(baseImage.naturalWidth * scale);
+    canvas.height = Math.round(baseImage.naturalHeight * scale);
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("לא הצלחתי להכין את משטח הציור להורדה.");
+    }
+
+    context.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+
+    for (const bubble of buildComicBubbleLayout(dialogueEntries)) {
+      drawBubbleOnCanvas(context, bubble, canvas.width, canvas.height);
+    }
+
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+
+        reject(new Error("לא הצלחתי להכין את קובץ הקומיקס להורדה."));
+      }, "image/png");
+    });
+  } finally {
+    if (revokeSourceUrl) {
+      URL.revokeObjectURL(revokeSourceUrl);
+    }
+  }
+}
+
+function triggerBlobDownload(blob, filename) {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => {
+    URL.revokeObjectURL(objectUrl);
+  }, 2000);
+}
+
+async function downloadCreation(creation, triggerElement) {
+  if (!creation) {
+    throw new Error("לא מצאתי יצירה להורדה.");
+  }
+
+  triggerElement?.setAttribute("aria-busy", "true");
+
+  try {
+    if (isComicCreation(creation)) {
+      const blob = await buildComicCompositeBlob(creation);
+
+      if (blob) {
+        triggerBlobDownload(blob, buildCreationFilename(creation));
+        return;
+      }
+    }
+
+    if (creation.usageId && creation.imageStoragePath) {
+      window.location.assign(
+        getDownloadGeneratedImageUrl(creation.usageId, buildCreationFilename(creation))
+      );
+      return;
+    }
+
+    const fallbackLink = document.createElement("a");
+    fallbackLink.href = getCreationPreviewUrl(creation);
+    fallbackLink.download = buildCreationFilename(creation);
+    document.body.appendChild(fallbackLink);
+    fallbackLink.click();
+    fallbackLink.remove();
+  } finally {
+    window.setTimeout(() => {
+      triggerElement?.removeAttribute("aria-busy");
+    }, 600);
+  }
 }
 
 function resetGalleryState() {
@@ -525,6 +1019,12 @@ function setLessonKey(nextLessonKey, options = {}) {
   const shouldPersist = options.persist !== false;
 
   state.lessonKey = normalizeLessonKey(nextLessonKey);
+
+  if (state.selectedSeatNumber > getVisibleSeatLimit() && !state.sessionId) {
+    state.selectedSeatNumber = 0;
+    updateSeatBadge();
+  }
+
   renderLessonUi();
 
   if (shouldResetSteps) {
@@ -536,11 +1036,20 @@ function setLessonKey(nextLessonKey, options = {}) {
     persistDraftState();
     persistSessionState();
   }
+
+  if (state.seatMap.length && !state.sessionId) {
+    applySeatMapPayload({
+      classCode: state.classCode || normalizeClassCode(classCodeInput.value),
+      seats: state.seatMap
+    });
+  }
 }
 
 function resetResults() {
   resultCard.hidden = true;
   imagePreview.removeAttribute("src");
+  resultVisualStage.classList.remove("is-comic");
+  clearComicOverlay(resultComicOverlay);
   downloadImageButton.hidden = true;
   downloadImageButton.removeAttribute("href");
   downloadImageButton.removeAttribute("download");
@@ -558,9 +1067,13 @@ function showCreationAsMainResult(creation) {
   }
 
   state.featuredUsageId = creation.usageId || "";
-  imagePreview.src = previewUrl;
+  renderCreationVisual(resultVisualStage, imagePreview, resultComicOverlay, creation);
 
-  if (creation.usageId && creation.imageStoragePath) {
+  if (isComicCreation(creation)) {
+    downloadImageButton.href = "#";
+    downloadImageButton.dataset.downloadMode = "comic";
+    downloadImageButton.removeAttribute("download");
+  } else if (creation.usageId && creation.imageStoragePath) {
     downloadImageButton.href = getDownloadGeneratedImageUrl(
       creation.usageId,
       buildCreationFilename(creation)
@@ -575,8 +1088,12 @@ function showCreationAsMainResult(creation) {
 
   downloadImageButton.hidden = false;
   savedImageNote.textContent = creation.imageStoragePath
-    ? "התמונה נשמרה בענן ותישאר זמינה גם אחרי רענון."
-    : "התמונה זמינה כרגע מהעמוד הזה.";
+    ? isComicCreation(creation)
+      ? "האיור נשמר בענן, והבועות המקצועיות יתווספו גם בהורדה."
+      : "התמונה נשמרה בענן ותישאר זמינה גם אחרי רענון."
+    : isComicCreation(creation)
+      ? "הקומיקס מורכב כאן בעמוד עם בועות דיבור ברורות."
+      : "התמונה זמינה כרגע מהעמוד הזה.";
   if (Number.isInteger(creation.seed)) {
     savedImageNote.textContent += ` seed: ${creation.seed}.`;
   }
@@ -614,6 +1131,8 @@ function renderGenerationGallery() {
     const actions = document.createElement("div");
     const showButton = document.createElement("button");
     const downloadLink = document.createElement("a");
+    const previewFrame = document.createElement("div");
+    const previewOverlay = document.createElement("div");
     const isActive = creation.usageId && creation.usageId === state.featuredUsageId;
     const lessonLabel = normalizeLessonKey(creation.lessonKey || state.lessonKey) === "comic-lab"
       ? "פאנל"
@@ -625,6 +1144,9 @@ function renderGenerationGallery() {
     meta.className = "gallery-card-meta";
     copy.className = "gallery-card-copy";
     actions.className = "gallery-card-actions";
+    previewFrame.className = "creation-stage gallery-stage";
+    previewOverlay.className = "comic-overlay";
+    previewOverlay.hidden = true;
 
     title.textContent = `${lessonLabel} ${creation.generationIndex || "?"}`;
     meta.textContent = creation.createdAtMs
@@ -638,6 +1160,8 @@ function renderGenerationGallery() {
     }
     preview.src = getCreationPreviewUrl(creation);
     preview.alt = `תצוגה מקדימה של ${lessonLabel} ${creation.generationIndex || ""}`;
+    previewFrame.classList.toggle("is-comic", isComicCreation(creation));
+    renderComicOverlay(previewOverlay, creation);
     copy.textContent = buildCreationSummary(creation);
 
     showButton.type = "button";
@@ -650,7 +1174,18 @@ function renderGenerationGallery() {
 
     downloadLink.className = "btn-primary";
     downloadLink.textContent = "הורדה";
-    if (creation.usageId && creation.imageStoragePath) {
+    if (isComicCreation(creation)) {
+      downloadLink.href = "#";
+      downloadLink.addEventListener("click", async (event) => {
+        event.preventDefault();
+
+        try {
+          await downloadCreation(creation, downloadLink);
+        } catch (error) {
+          showStatus("bad", "ההורדה נכשלה", error.message || "לא הצלחתי להכין את הקובץ.");
+        }
+      });
+    } else if (creation.usageId && creation.imageStoragePath) {
       downloadLink.href = getDownloadGeneratedImageUrl(
         creation.usageId,
         buildCreationFilename(creation)
@@ -661,8 +1196,9 @@ function renderGenerationGallery() {
     }
 
     head.append(title, meta);
+    previewFrame.append(preview, previewOverlay);
     actions.append(showButton, downloadLink);
-    card.append(head, preview, copy, actions);
+    card.append(head, previewFrame, copy, actions);
     studentGalleryGrid.appendChild(card);
   }
 }
@@ -733,7 +1269,6 @@ function stopSeatRealtime() {
 }
 
 function renderSeatBoard(seats = []) {
-  state.seatMap = seats;
   seatBoard.innerHTML = "";
 
   if (!seats.length) {
@@ -806,7 +1341,9 @@ function stopSeatPolling() {
 
 function applySeatMapPayload(payload, { fromRealtime = false } = {}) {
   const seats = Array.isArray(payload?.seats) ? payload.seats : [];
-  const availableCount = seats.filter((seat) => seat.status === "available").length;
+  state.seatMap = seats;
+  const visibleSeats = getVisibleSeats(seats);
+  const availableCount = visibleSeats.filter((seat) => seat.status === "available").length;
   const previouslySelectedSeat = state.selectedSeatNumber;
 
   if (payload?.classCode) {
@@ -814,10 +1351,12 @@ function applySeatMapPayload(payload, { fromRealtime = false } = {}) {
   }
 
   if (
+    state.selectedSeatNumber > getVisibleSeatLimit() ||
     state.selectedSeatNumber &&
     seats.some(
       (seat) =>
         seat.seatNumber === state.selectedSeatNumber &&
+        seat.seatNumber <= getVisibleSeatLimit() &&
         seat.status === "taken" &&
         !(state.sessionId && state.seatNumber === state.selectedSeatNumber)
     )
@@ -833,10 +1372,14 @@ function applySeatMapPayload(payload, { fromRealtime = false } = {}) {
     }
   }
 
-  renderSeatBoard(seats);
+  renderSeatBoard(visibleSeats);
   seatStatusText.textContent = fromRealtime
-    ? `הלוח מתעדכן בזמן אמת. יש כרגע ${availableCount} מקומות פנויים.`
-    : `יש כרגע ${availableCount} מקומות פנויים.`;
+    ? isComicLesson()
+      ? `לוח הקומיקס מתעדכן בזמן אמת. פתוחים עד 15 מקומות, ויש כרגע ${availableCount} פנויים.`
+      : `הלוח מתעדכן בזמן אמת. יש כרגע ${availableCount} מקומות פנויים.`
+    : isComicLesson()
+      ? `במסלול הקומיקס פתוחים עד 15 מקומות, ויש כרגע ${availableCount} פנויים.`
+      : `יש כרגע ${availableCount} מקומות פנויים.`;
   updateJoinButtonAvailability();
 }
 
@@ -1171,6 +1714,16 @@ generateButton.addEventListener("click", async () => {
 });
 
 downloadImageButton.addEventListener("click", (event) => {
+  const featuredCreation = getFeaturedCreation();
+
+  if (featuredCreation && isComicCreation(featuredCreation)) {
+    event.preventDefault();
+    void downloadCreation(featuredCreation, downloadImageButton).catch((error) => {
+      showStatus("bad", "ההורדה נכשלה", error.message || "לא הצלחתי להכין את הקובץ.");
+    });
+    return;
+  }
+
   if (!downloadImageButton.href || downloadImageButton.href.endsWith("#")) {
     event.preventDefault();
     showStatus("bad", "אין קובץ להורדה", "נסו ליצור את התמונה מחדש.");

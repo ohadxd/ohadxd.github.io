@@ -51,7 +51,7 @@ const LESSON_DEFINITIONS = {
     title: "יוצרים קומיקס",
     shortTitle: "קומיקס",
     description: "יוצרים סדרת פאנלים עם אותן דמויות קבועות לאורך כל הקומיקס.",
-    generationLimit: 15,
+    generationLimit: 10,
     generateButtonLabel: "יצירת פאנל קומיקס",
     steps: [
       {
@@ -116,6 +116,7 @@ const ACTIVITY_CONFIG = {
   },
   defaultGenerationsPerStudent: LESSON_DEFINITIONS[DEFAULT_LESSON_KEY].generationLimit,
   comicGenerationsPerStudent: LESSON_DEFINITIONS["comic-lab"].generationLimit,
+  comicSeatCount: 15,
   defaultSeatCount: 25,
   seatClaimMinutes: 120,
   maxStepLength: 220,
@@ -201,7 +202,7 @@ const ACTIVITY_CONFIG = {
     "This is part of a comic series.",
     "Keep the recurring characters consistent across every panel.",
     "Keep the same face shape, hairstyle, clothing colors, accessories, body proportions, and overall visual identity in every new panel.",
-    "Use clear comic-panel framing and readable speech-bubble placement."
+    "Use clear comic-panel framing with clean space around the speaking characters."
   ].join(" "),
   imageNegativePromptEnglish: [
     "extra limbs",

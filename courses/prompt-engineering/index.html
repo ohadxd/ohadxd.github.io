@@ -28,7 +28,7 @@
     "about": "Prompt Engineering for Children"
   }
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=20260315-comic-1" />
+  <link rel="stylesheet" href="/css/style.css?v=20260315-comic-2" />
 </head>
 <body>
   <div class="wrap">
@@ -72,7 +72,7 @@
           </button>
           <button class="lesson-mode-card" type="button" data-lesson-key="comic-lab">
             <strong>יוצרים קומיקס</strong>
-            <span>דמויות קבועות וסדרת פאנלים עד 15 יצירות.</span>
+            <span>דמויות קבועות, עד 10 פאנלים, ועד 15 תלמידים.</span>
           </button>
         </div>
         <p id="lessonLeadText" class="kid-note">במסלול הזה בונים תמונה אחת ב-5 שלבים קבועים.</p>
@@ -197,7 +197,10 @@
       <section id="resultCard" class="card" hidden>
         <h2><span class="icon">🖼️</span> התוצאה</h2>
         <figure class="result-figure">
-          <img id="imagePreview" alt="התמונה שנוצרה מהפרומפט" />
+          <div id="resultVisualStage" class="creation-stage result-stage">
+            <img id="imagePreview" alt="התמונה שנוצרה מהפרומפט" />
+            <div id="resultComicOverlay" class="comic-overlay" hidden aria-hidden="true"></div>
+          </div>
           <figcaption>התמונה נוצרת רק אחרי שכל השלבים מולאו ונבדקו.</figcaption>
         </figure>
         <div class="action-row">
@@ -227,6 +230,6 @@
     </footer>
   </div>
 
-  <script type="module" src="/js/prompt-lab.js?v=20260315-comic-1"></script>
+  <script type="module" src="/js/prompt-lab.js?v=20260315-comic-2"></script>
 </body>
 </html>

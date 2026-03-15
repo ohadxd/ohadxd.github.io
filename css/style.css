@@ -1187,12 +1187,89 @@ figure,
   }
 }
 
-.result-figure img{
+.creation-stage{
+  position: relative;
   width: 100%;
   max-width: 560px;
+  margin: 0 auto;
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(255,255,255,0.85), rgba(255,255,255,0.2)),
+    linear-gradient(180deg, #eff7ff, #d9ebff);
+  box-shadow: 0 18px 34px rgba(30, 64, 116, 0.12);
+}
+
+.creation-stage img{
+  width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
   margin: 0 auto;
+  display: block;
+}
+
+.result-stage{
+  max-width: 560px;
+}
+
+.gallery-stage{
+  max-width: none;
+}
+
+.comic-overlay{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.comic-bubble{
+  position: absolute;
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 24px;
+  border: 2px solid #204066;
+  background: rgba(255, 255, 255, 0.95);
+  color: #102b47;
+  text-align: right;
+  line-height: 1.45;
+  box-shadow: 0 14px 22px rgba(30, 64, 116, 0.18);
+}
+
+.comic-bubble::after{
+  content: "";
+  position: absolute;
+  bottom: 14px;
+  width: 22px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.95);
+  border-right: 2px solid #204066;
+  border-bottom: 2px solid #204066;
+  transform: rotate(45deg);
+}
+
+.comic-bubble.tail-right::after{
+  right: 16px;
+}
+
+.comic-bubble.tail-left::after{
+  left: 16px;
+}
+
+.comic-bubble-speaker{
+  font-size: clamp(11px, 1.6vw, 14px);
+  font-weight: 900;
+  color: #0d4f91;
+}
+
+.comic-bubble-text{
+  font-size: clamp(13px, 2vw, 18px);
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.creation-stage.is-comic img{
+  filter: saturate(1.04) contrast(1.02);
 }
 
 .prompt-output{
@@ -1256,9 +1333,6 @@ figure,
 }
 
 .gallery-card img{
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
   border-radius: 14px;
   border: 1px solid #d8e8f8;
   background: #edf6ff;
@@ -1288,6 +1362,26 @@ figure,
   line-height: 1.6;
 }
 
+.gallery-stage .comic-bubble{
+  padding: 10px 12px;
+  border-radius: 18px;
+  box-shadow: 0 10px 16px rgba(30, 64, 116, 0.12);
+}
+
+.gallery-stage .comic-bubble::after{
+  width: 16px;
+  height: 16px;
+  bottom: 10px;
+}
+
+.gallery-stage .comic-bubble-speaker{
+  font-size: 10px;
+}
+
+.gallery-stage .comic-bubble-text{
+  font-size: 12px;
+}
+
 .gallery-card-actions{
   display: flex;
   gap: 8px;
@@ -1298,6 +1392,27 @@ figure,
 .gallery-card-actions .btn-primary{
   padding: 8px 12px;
   font-size: 14px;
+}
+
+@media (max-width: 720px){
+  .comic-bubble{
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  .comic-bubble::after{
+    width: 16px;
+    height: 16px;
+    bottom: 10px;
+  }
+
+  .comic-bubble-speaker{
+    font-size: 10px;
+  }
+
+  .comic-bubble-text{
+    font-size: 12px;
+  }
 }
 
 .admin-class-grid{

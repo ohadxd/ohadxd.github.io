@@ -363,6 +363,22 @@ function getSeatCount(classData) {
   return ACTIVITY_CONFIG.defaultSeatCount;
 }
 
+function getLessonSeatCount(classData, lessonKey = DEFAULT_LESSON_KEY) {
+  const lesson = getLessonDefinition(lessonKey);
+
+  if (lesson.key === "comic-lab") {
+    const rawComicSeatCount = Number(classData.comicSeatCount);
+
+    if (Number.isFinite(rawComicSeatCount) && rawComicSeatCount > 0) {
+      return Math.floor(rawComicSeatCount);
+    }
+
+    return ACTIVITY_CONFIG.comicSeatCount;
+  }
+
+  return getSeatCount(classData);
+}
+
 function normalizeSeatNumber(seatNumber, seatCount) {
   const numericSeat = Number(seatNumber);
 
@@ -1305,7 +1321,7 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
   const { classRef, classData, normalizedCode } = await loadClassAccessCode(
     request.data?.classCode
   );
-  const seatCount = getSeatCount(classData);
+  const seatCount = getLessonSeatCount(classData, lessonKey);
   const seatNumber = normalizeSeatNumber(request.data?.seatNumber, seatCount);
   const generationLimit = getLessonGenerationLimit(classData, lessonKey);
   const sessionRef = db.collection("studentSessions").doc();
@@ -1387,10 +1403,11 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
 
 exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
   const { sessionRef, sessionData } = await loadSession(request.data?.sessionId);
+  const lessonKey = sanitizeLessonKey(sessionData.lessonKey);
   const { classRef, classData, normalizedCode } = await loadClassAccessCode(
     sessionData.classCode
   );
-  const seatCount = getSeatCount(classData);
+  const seatCount = getLessonSeatCount(classData, lessonKey);
   const seatNumber = normalizeSeatNumber(sessionData.seatNumber, seatCount);
   const seatRef = classRef.collection("seats").doc(formatSeatId(seatNumber));
   const now = new Date();
@@ -1431,23 +1448,23 @@ exports.restoreActivity = onCall(getCallableOptions(), async (request) => {
     sessionId: sessionRef.id,
     classCode: normalizedCode,
     classLabel: classData.label || "",
-    lessonKey: sanitizeLessonKey(sessionData.lessonKey),
+    lessonKey,
     studentName: sessionData.studentName || "תלמיד/ה",
     seatNumber,
     generationLimit: Number(
       sessionData.generationLimit ||
-        getLessonGenerationLimit(classData, sanitizeLessonKey(sessionData.lessonKey))
+        getLessonGenerationLimit(classData, lessonKey)
     ),
     remainingGenerations: Math.max(
       Number(
         sessionData.generationLimit ||
-          getLessonGenerationLimit(classData, sanitizeLessonKey(sessionData.lessonKey))
+          getLessonGenerationLimit(classData, lessonKey)
       ) -
         Number(sessionData.generationsCount || 0),
       0
     ),
     seed: normalizeSeed(sessionData.currentSeed),
-    promptSteps: sessionData.promptSteps || buildEmptyPromptSteps(sessionData.lessonKey),
+    promptSteps: sessionData.promptSteps || buildEmptyPromptSteps(lessonKey),
     isPromptComplete: Boolean(sessionData.isPromptComplete),
     message: ACTIVITY_CONFIG.resumeMessage
   };
