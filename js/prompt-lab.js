@@ -13,6 +13,7 @@ import {
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
+const STORAGE_COMIC_LAYOUT_KEY = "funlab-prompt-lab-comic-layouts";
 const AUTOSAVE_DELAY_MS = 1400;
 const SEAT_POLL_MS = 30000;
 const DEFAULT_LESSON_KEY = "image-lab";
@@ -223,6 +224,8 @@ const resultVisualStage = document.getElementById("resultVisualStage");
 const imagePreview = document.getElementById("imagePreview");
 const resultComicOverlay = document.getElementById("resultComicOverlay");
 const downloadImageButton = document.getElementById("downloadImageButton");
+const editComicLayoutButton = document.getElementById("editComicLayoutButton");
+const resetComicLayoutButton = document.getElementById("resetComicLayoutButton");
 const savedImageNote = document.getElementById("savedImageNote");
 const finalPromptOutput = document.getElementById("finalPromptOutput");
 const classCodeInput = document.getElementById("classCode");
@@ -287,7 +290,8 @@ const state = {
   publicSeatMapId: "",
   seatRealtimeUnsubscribe: null,
   featuredUsageId: "",
-  currentSeed: null
+  currentSeed: null,
+  comicLayoutEditMode: false
 };
 
 function normalizeClassCode(value) {
@@ -486,6 +490,74 @@ function buildComicBubbleLayout(entries) {
   }));
 }
 
+function getCreationLayoutKey(creation) {
+  return creation?.usageId ? `usage:${creation.usageId}` : "";
+}
+
+function readComicLayouts() {
+  return readStorage(STORAGE_COMIC_LAYOUT_KEY) || {};
+}
+
+function writeComicLayouts(layouts) {
+  writeStorage(STORAGE_COMIC_LAYOUT_KEY, layouts);
+}
+
+function getSavedBubbleLayout(creation) {
+  const layoutKey = getCreationLayoutKey(creation);
+
+  if (!layoutKey) {
+    return [];
+  }
+
+  const savedLayouts = readComicLayouts();
+  return Array.isArray(savedLayouts?.[layoutKey]) ? savedLayouts[layoutKey] : [];
+}
+
+function saveBubbleLayout(creation, bubbles) {
+  const layoutKey = getCreationLayoutKey(creation);
+
+  if (!layoutKey) {
+    return;
+  }
+
+  const savedLayouts = readComicLayouts();
+  savedLayouts[layoutKey] = bubbles.map((bubble) => ({
+    left: Number(bubble.left.toFixed(4)),
+    top: Number(bubble.top.toFixed(4)),
+    tail: bubble.tail
+  }));
+  writeComicLayouts(savedLayouts);
+}
+
+function clearSavedBubbleLayout(creation) {
+  const layoutKey = getCreationLayoutKey(creation);
+
+  if (!layoutKey) {
+    return;
+  }
+
+  const savedLayouts = readComicLayouts();
+
+  if (savedLayouts[layoutKey]) {
+    delete savedLayouts[layoutKey];
+    writeComicLayouts(savedLayouts);
+  }
+}
+
+function getMergedBubbleLayout(creation) {
+  const baseLayout = buildComicBubbleLayout(
+    parseComicDialogue(creation?.stepSnapshot?.action || "")
+  );
+  const savedLayout = getSavedBubbleLayout(creation);
+
+  return baseLayout.map((bubble, index) => ({
+    ...bubble,
+    left: Number.isFinite(savedLayout[index]?.left) ? savedLayout[index].left : bubble.left,
+    top: Number.isFinite(savedLayout[index]?.top) ? savedLayout[index].top : bubble.top,
+    tail: savedLayout[index]?.tail || bubble.tail
+  }));
+}
+
 function clearComicOverlay(container) {
   if (!container) {
     return;
@@ -495,7 +567,7 @@ function clearComicOverlay(container) {
   container.hidden = true;
 }
 
-function renderComicOverlay(container, creation) {
+function renderComicOverlay(container, creation, options = {}) {
   if (!container) {
     return;
   }
@@ -506,24 +578,33 @@ function renderComicOverlay(container, creation) {
     return;
   }
 
-  const dialogueEntries = parseComicDialogue(creation?.stepSnapshot?.action || "");
+  const bubbles = getMergedBubbleLayout(creation);
 
-  if (!dialogueEntries.length) {
+  if (!bubbles.length) {
     return;
   }
 
-  const bubbles = buildComicBubbleLayout(dialogueEntries);
+  container.classList.toggle("is-editable", options.editable === true);
 
-  for (const bubble of bubbles) {
+  for (const [index, bubble] of bubbles.entries()) {
     const bubbleElement = document.createElement("div");
     const speaker = document.createElement("div");
     const text = document.createElement("div");
+    const grip = document.createElement("button");
 
     bubbleElement.className = `comic-bubble tail-${bubble.tail}`;
+    bubbleElement.dataset.bubbleIndex = String(index);
     bubbleElement.style.left = `${bubble.left * 100}%`;
     bubbleElement.style.top = `${bubble.top * 100}%`;
     bubbleElement.style.width = `${bubble.width * 100}%`;
     bubbleElement.style.minHeight = `${bubble.minHeight * 100}%`;
+
+    if (options.editable === true) {
+      grip.type = "button";
+      grip.className = "comic-bubble-grip";
+      grip.textContent = "הזזה";
+      bubbleElement.appendChild(grip);
+    }
 
     if (bubble.speaker) {
       speaker.className = "comic-bubble-speaker";
@@ -540,7 +621,7 @@ function renderComicOverlay(container, creation) {
   container.hidden = false;
 }
 
-function renderCreationVisual(stageElement, imageElement, overlayElement, creation) {
+function renderCreationVisual(stageElement, imageElement, overlayElement, creation, options = {}) {
   if (!stageElement || !imageElement) {
     return;
   }
@@ -555,7 +636,7 @@ function renderCreationVisual(stageElement, imageElement, overlayElement, creati
 
   imageElement.src = previewUrl;
   stageElement.classList.toggle("is-comic", isComicCreation(creation));
-  renderComicOverlay(overlayElement, creation);
+  renderComicOverlay(overlayElement, creation, options);
 }
 
 function findCreationByUsageId(usageId) {
@@ -564,6 +645,89 @@ function findCreationByUsageId(usageId) {
 
 function getFeaturedCreation() {
   return findCreationByUsageId(state.featuredUsageId) || state.generationHistory[0] || null;
+}
+
+function attachEditableComicOverlayHandlers(container, creation) {
+  if (!container || !creation || !isComicCreation(creation) || !state.comicLayoutEditMode) {
+    return;
+  }
+
+  for (const bubbleElement of container.querySelectorAll(".comic-bubble")) {
+    const grip = bubbleElement.querySelector(".comic-bubble-grip");
+
+    if (!grip) {
+      continue;
+    }
+
+    grip.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const overlayRect = container.getBoundingClientRect();
+      const bubbleRect = bubbleElement.getBoundingClientRect();
+      const bubbleIndex = Number(bubbleElement.dataset.bubbleIndex || -1);
+
+      if (bubbleIndex < 0) {
+        return;
+      }
+
+      const savedLayout = getMergedBubbleLayout(creation);
+      const bubble = savedLayout[bubbleIndex];
+
+      if (!bubble) {
+        return;
+      }
+
+      const offsetX = event.clientX - bubbleRect.left;
+      const offsetY = event.clientY - bubbleRect.top;
+
+      bubbleElement.classList.add("is-dragging");
+      grip.setPointerCapture(event.pointerId);
+
+      const handlePointerMove = (moveEvent) => {
+        const bubbleWidthPx = bubbleRect.width;
+        const bubbleHeightPx = bubbleRect.height;
+        const maxLeft = Math.max(overlayRect.width - bubbleWidthPx, 0);
+        const maxTop = Math.max(overlayRect.height - bubbleHeightPx, 0);
+        const nextLeftPx = Math.min(
+          Math.max(moveEvent.clientX - overlayRect.left - offsetX, 0),
+          maxLeft
+        );
+        const nextTopPx = Math.min(
+          Math.max(moveEvent.clientY - overlayRect.top - offsetY, 0),
+          maxTop
+        );
+        const nextLeft = Number((nextLeftPx / Math.max(overlayRect.width, 1)).toFixed(4));
+        const nextTop = Number((nextTopPx / Math.max(overlayRect.height, 1)).toFixed(4));
+        const nextTail = nextLeft + bubble.width / 2 > 0.5 ? "right" : "left";
+
+        savedLayout[bubbleIndex] = {
+          ...bubble,
+          left: nextLeft,
+          top: nextTop,
+          tail: nextTail
+        };
+
+        bubbleElement.style.left = `${nextLeft * 100}%`;
+        bubbleElement.style.top = `${nextTop * 100}%`;
+        bubbleElement.classList.toggle("tail-right", nextTail === "right");
+        bubbleElement.classList.toggle("tail-left", nextTail === "left");
+      };
+
+      const finishPointer = () => {
+        bubbleElement.classList.remove("is-dragging");
+        grip.removeEventListener("pointermove", handlePointerMove);
+        grip.removeEventListener("pointerup", finishPointer);
+        grip.removeEventListener("pointercancel", finishPointer);
+        saveBubbleLayout(creation, savedLayout);
+        renderGenerationGallery();
+      };
+
+      grip.addEventListener("pointermove", handlePointerMove);
+      grip.addEventListener("pointerup", finishPointer, { once: true });
+      grip.addEventListener("pointercancel", finishPointer, { once: true });
+    });
+  }
 }
 
 async function loadImageElement(sourceUrl) {
@@ -728,9 +892,9 @@ function drawBubbleOnCanvas(context, bubble, imageWidth, imageHeight) {
 }
 
 async function buildComicCompositeBlob(creation) {
-  const dialogueEntries = parseComicDialogue(creation?.stepSnapshot?.action || "");
+  const mergedBubbles = getMergedBubbleLayout(creation);
 
-  if (!dialogueEntries.length) {
+  if (!mergedBubbles.length) {
     return null;
   }
 
@@ -771,7 +935,7 @@ async function buildComicCompositeBlob(creation) {
 
     context.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
 
-    for (const bubble of buildComicBubbleLayout(dialogueEntries)) {
+    for (const bubble of mergedBubbles) {
       drawBubbleOnCanvas(context, bubble, canvas.width, canvas.height);
     }
 
@@ -1046,6 +1210,7 @@ function setLessonKey(nextLessonKey, options = {}) {
 }
 
 function resetResults() {
+  state.comicLayoutEditMode = false;
   resultCard.hidden = true;
   imagePreview.removeAttribute("src");
   resultVisualStage.classList.remove("is-comic");
@@ -1057,6 +1222,8 @@ function resetResults() {
   savedImageNote.hidden = true;
   savedImageNote.textContent = "";
   finalPromptOutput.textContent = "";
+  editComicLayoutButton.hidden = true;
+  resetComicLayoutButton.hidden = true;
 }
 
 function showCreationAsMainResult(creation) {
@@ -1067,7 +1234,10 @@ function showCreationAsMainResult(creation) {
   }
 
   state.featuredUsageId = creation.usageId || "";
-  renderCreationVisual(resultVisualStage, imagePreview, resultComicOverlay, creation);
+  renderCreationVisual(resultVisualStage, imagePreview, resultComicOverlay, creation, {
+    editable: state.comicLayoutEditMode && isComicCreation(creation)
+  });
+  attachEditableComicOverlayHandlers(resultComicOverlay, creation);
 
   if (isComicCreation(creation)) {
     downloadImageButton.href = "#";
@@ -1087,12 +1257,19 @@ function showCreationAsMainResult(creation) {
   }
 
   downloadImageButton.hidden = false;
+  editComicLayoutButton.hidden = !isComicCreation(creation);
+  resetComicLayoutButton.hidden = !isComicCreation(creation);
+  editComicLayoutButton.textContent = state.comicLayoutEditMode ? "סיום סידור" : "סידור בועות";
   savedImageNote.textContent = creation.imageStoragePath
     ? isComicCreation(creation)
-      ? "האיור נשמר בענן, והבועות המקצועיות יתווספו גם בהורדה."
+      ? state.comicLayoutEditMode
+        ? "גררו את הבועות למקום הנכון. השמירה מתבצעת אוטומטית גם לגלריה וגם להורדה."
+        : "האיור נשמר בענן, והבועות המקצועיות יתווספו גם בהורדה."
       : "התמונה נשמרה בענן ותישאר זמינה גם אחרי רענון."
     : isComicCreation(creation)
-      ? "הקומיקס מורכב כאן בעמוד עם בועות דיבור ברורות."
+      ? state.comicLayoutEditMode
+        ? "גררו את הבועות למקום הנכון. השמירה מתבצעת אוטומטית גם לגלריה וגם להורדה."
+        : "הקומיקס מורכב כאן בעמוד עם בועות דיבור ברורות."
       : "התמונה זמינה כרגע מהעמוד הזה.";
   if (Number.isInteger(creation.seed)) {
     savedImageNote.textContent += ` seed: ${creation.seed}.`;
@@ -1471,6 +1648,7 @@ function applySession(payload) {
 
   state.generationHistory = [];
   state.featuredUsageId = "";
+  state.comicLayoutEditMode = false;
   persistSessionState();
   persistDraftState();
   setJoinLocked(true);
@@ -1711,6 +1889,37 @@ generateButton.addEventListener("click", async () => {
       "יוצר..."
     );
   }
+});
+
+editComicLayoutButton.addEventListener("click", () => {
+  const featuredCreation = getFeaturedCreation();
+
+  if (!featuredCreation || !isComicCreation(featuredCreation)) {
+    return;
+  }
+
+  state.comicLayoutEditMode = !state.comicLayoutEditMode;
+  showCreationAsMainResult(featuredCreation);
+  showStatus(
+    "good",
+    state.comicLayoutEditMode ? "מצב סידור פעיל" : "שמירתם את הסידור",
+    state.comicLayoutEditMode
+      ? "גררו כל בועה למקום הנכון. הסידור נשמר אוטומטית."
+      : "הבועות יוצגו מעכשיו במיקום החדש גם בגלריה וגם בהורדה."
+  );
+});
+
+resetComicLayoutButton.addEventListener("click", () => {
+  const featuredCreation = getFeaturedCreation();
+
+  if (!featuredCreation || !isComicCreation(featuredCreation)) {
+    return;
+  }
+
+  clearSavedBubbleLayout(featuredCreation);
+  showCreationAsMainResult(featuredCreation);
+  renderGenerationGallery();
+  showStatus("good", "איפסנו את הבועות", "חזרנו לסידור האוטומטי של הבועות.");
 });
 
 downloadImageButton.addEventListener("click", (event) => {
