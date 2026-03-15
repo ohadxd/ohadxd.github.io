@@ -22,6 +22,9 @@ const COMIC_MAX_BUBBLES = 4;
 const COMIC_DIALOGUE_MAX_CHARS = 84;
 const COMIC_SPEAKER_MAX_CHARS = 26;
 const COMIC_DOWNLOAD_WIDTH = 1600;
+const COMIC_MIN_SCALE = 0.72;
+const COMIC_MAX_SCALE = 1.45;
+const COMIC_SCALE_STEP = 0.1;
 const COMIC_DIALOGUE_VERB_PATTERN =
   "(?:אומר(?:ת|ים|ות)?|שואל(?:ת|ים|ות)?|צועק(?:ת|ים|ות)?|לוחש(?:ת|ים|ות)?|עונה(?:ים|ות)?|קורא(?:ת|ים|ות)?|חושב(?:ת|ים|ות)?)";
 const COMIC_DIALOGUE_REGEX = new RegExp(
@@ -485,6 +488,7 @@ function buildComicBubbleLayout(entries) {
 
   return safeEntries.map((entry, index) => ({
     ...layout[index],
+    scale: 1,
     speaker: entry.speaker,
     text: entry.text
   }));
@@ -524,7 +528,8 @@ function saveBubbleLayout(creation, bubbles) {
   savedLayouts[layoutKey] = bubbles.map((bubble) => ({
     left: Number(bubble.left.toFixed(4)),
     top: Number(bubble.top.toFixed(4)),
-    tail: bubble.tail
+    tail: bubble.tail,
+    scale: Number((bubble.scale || 1).toFixed(2))
   }));
   writeComicLayouts(savedLayouts);
 }
@@ -554,7 +559,13 @@ function getMergedBubbleLayout(creation) {
     ...bubble,
     left: Number.isFinite(savedLayout[index]?.left) ? savedLayout[index].left : bubble.left,
     top: Number.isFinite(savedLayout[index]?.top) ? savedLayout[index].top : bubble.top,
-    tail: savedLayout[index]?.tail || bubble.tail
+    tail: savedLayout[index]?.tail || bubble.tail,
+    scale:
+      Number.isFinite(savedLayout[index]?.scale) &&
+      savedLayout[index].scale >= COMIC_MIN_SCALE &&
+      savedLayout[index].scale <= COMIC_MAX_SCALE
+        ? savedLayout[index].scale
+        : bubble.scale
   }));
 }
 
@@ -591,6 +602,10 @@ function renderComicOverlay(container, creation, options = {}) {
     const speaker = document.createElement("div");
     const text = document.createElement("div");
     const grip = document.createElement("button");
+    const flipTailButton = document.createElement("button");
+    const shrinkButton = document.createElement("button");
+    const growButton = document.createElement("button");
+    const tools = document.createElement("div");
 
     bubbleElement.className = `comic-bubble tail-${bubble.tail}`;
     bubbleElement.dataset.bubbleIndex = String(index);
@@ -598,12 +613,24 @@ function renderComicOverlay(container, creation, options = {}) {
     bubbleElement.style.top = `${bubble.top * 100}%`;
     bubbleElement.style.width = `${bubble.width * 100}%`;
     bubbleElement.style.minHeight = `${bubble.minHeight * 100}%`;
+    bubbleElement.style.setProperty("--bubble-scale", String(bubble.scale || 1));
 
     if (options.editable === true) {
+      tools.className = "comic-bubble-tools";
+      shrinkButton.type = "button";
+      shrinkButton.className = "comic-bubble-size-button is-shrink";
+      shrinkButton.textContent = "−";
       grip.type = "button";
       grip.className = "comic-bubble-grip";
       grip.textContent = "הזזה";
-      bubbleElement.appendChild(grip);
+      growButton.type = "button";
+      growButton.className = "comic-bubble-size-button is-grow";
+      growButton.textContent = "+";
+      flipTailButton.type = "button";
+      flipTailButton.className = "comic-bubble-tail-toggle";
+      flipTailButton.textContent = bubble.tail === "right" ? "זנב לימין" : "זנב לשמאל";
+      tools.append(shrinkButton, grip, growButton, flipTailButton);
+      bubbleElement.appendChild(tools);
     }
 
     if (bubble.speaker) {
@@ -654,10 +681,84 @@ function attachEditableComicOverlayHandlers(container, creation) {
 
   for (const bubbleElement of container.querySelectorAll(".comic-bubble")) {
     const grip = bubbleElement.querySelector(".comic-bubble-grip");
+    const flipTailButton = bubbleElement.querySelector(".comic-bubble-tail-toggle");
+    const shrinkButton = bubbleElement.querySelector(".comic-bubble-size-button.is-shrink");
+    const growButton = bubbleElement.querySelector(".comic-bubble-size-button.is-grow");
 
     if (!grip) {
       continue;
     }
+
+    if (flipTailButton) {
+      flipTailButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const bubbleIndex = Number(bubbleElement.dataset.bubbleIndex || -1);
+
+        if (bubbleIndex < 0) {
+          return;
+        }
+
+        const savedLayout = getMergedBubbleLayout(creation);
+        const bubble = savedLayout[bubbleIndex];
+
+        if (!bubble) {
+          return;
+        }
+
+        savedLayout[bubbleIndex] = {
+          ...bubble,
+          tail: bubble.tail === "right" ? "left" : "right"
+        };
+        saveBubbleLayout(creation, savedLayout);
+        showCreationAsMainResult(creation);
+        renderGenerationGallery();
+      });
+    }
+
+    const resizeBubble = (direction) => {
+      const bubbleIndex = Number(bubbleElement.dataset.bubbleIndex || -1);
+
+      if (bubbleIndex < 0) {
+        return;
+      }
+
+      const savedLayout = getMergedBubbleLayout(creation);
+      const bubble = savedLayout[bubbleIndex];
+
+      if (!bubble) {
+        return;
+      }
+
+      const nextScale = Math.min(
+        COMIC_MAX_SCALE,
+        Math.max(
+          COMIC_MIN_SCALE,
+          Number(((bubble.scale || 1) + direction * COMIC_SCALE_STEP).toFixed(2))
+        )
+      );
+
+      savedLayout[bubbleIndex] = {
+        ...bubble,
+        scale: nextScale
+      };
+      saveBubbleLayout(creation, savedLayout);
+      showCreationAsMainResult(creation);
+      renderGenerationGallery();
+    };
+
+    shrinkButton?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      resizeBubble(-1);
+    });
+
+    growButton?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      resizeBubble(1);
+    });
 
     grip.addEventListener("pointerdown", (event) => {
       event.preventDefault();
@@ -699,19 +800,15 @@ function attachEditableComicOverlayHandlers(container, creation) {
         );
         const nextLeft = Number((nextLeftPx / Math.max(overlayRect.width, 1)).toFixed(4));
         const nextTop = Number((nextTopPx / Math.max(overlayRect.height, 1)).toFixed(4));
-        const nextTail = nextLeft + bubble.width / 2 > 0.5 ? "right" : "left";
 
         savedLayout[bubbleIndex] = {
           ...bubble,
           left: nextLeft,
-          top: nextTop,
-          tail: nextTail
+          top: nextTop
         };
 
         bubbleElement.style.left = `${nextLeft * 100}%`;
         bubbleElement.style.top = `${nextTop * 100}%`;
-        bubbleElement.classList.toggle("tail-right", nextTail === "right");
-        bubbleElement.classList.toggle("tail-left", nextTail === "left");
       };
 
       const finishPointer = () => {
@@ -821,12 +918,14 @@ function fitBubbleText(context, bubble, boxWidth, boxHeight) {
 }
 
 function drawBubbleOnCanvas(context, bubble, imageWidth, imageHeight) {
+  const bubbleScale = Math.min(
+    COMIC_MAX_SCALE,
+    Math.max(COMIC_MIN_SCALE, Number(bubble.scale || 1))
+  );
   const boxX = Math.round(bubble.left * imageWidth);
   const boxY = Math.round(bubble.top * imageHeight);
-  const boxWidth = Math.round(bubble.width * imageWidth);
-  const minHeight = Math.round(bubble.minHeight * imageHeight);
-  const tailSize = Math.max(18, Math.round(imageWidth * 0.018));
-  const radius = Math.max(18, Math.round(imageWidth * 0.018));
+  const boxWidth = Math.round(bubble.width * imageWidth * bubbleScale);
+  const minHeight = Math.round(bubble.minHeight * imageHeight * bubbleScale);
   const shadowBlur = Math.max(10, Math.round(imageWidth * 0.014));
   const textMetrics = fitBubbleText(context, bubble, boxWidth, minHeight + 40);
   const speakerHeight = bubble.speaker ? Math.round(textMetrics.speakerFontSize * 1.45) : 0;
@@ -834,13 +933,30 @@ function drawBubbleOnCanvas(context, bubble, imageWidth, imageHeight) {
     minHeight,
     24 + speakerHeight + textMetrics.lines.length * textMetrics.lineHeight + 18
   );
+  const centerX = boxX + boxWidth / 2;
+  const centerY = boxY + boxHeight / 2;
+  const radiusX = boxWidth / 2;
+  const radiusY = boxHeight / 2;
+  const tailMainRadius = Math.max(11, Math.round(imageWidth * 0.012 * bubbleScale));
+  const tailSmallRadius = Math.max(7, Math.round(imageWidth * 0.008 * bubbleScale));
+  const tailMainX = bubble.tail === "left" ? boxX + boxWidth * 0.22 : boxX + boxWidth * 0.78;
+  const tailSmallX = bubble.tail === "left" ? boxX + boxWidth * 0.14 : boxX + boxWidth * 0.86;
+  const tailMainY = boxY + boxHeight + tailMainRadius * 0.35;
+  const tailSmallY = boxY + boxHeight + tailMainRadius + tailSmallRadius * 0.9;
 
   context.save();
   context.shadowColor = "rgba(31, 61, 104, 0.18)";
   context.shadowBlur = shadowBlur;
   context.shadowOffsetY = Math.max(8, Math.round(imageHeight * 0.01));
   context.fillStyle = "rgba(255, 255, 255, 0.96)";
-  roundedRectPath(context, boxX, boxY, boxWidth, boxHeight, radius);
+  context.beginPath();
+  context.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+  context.fill();
+  context.beginPath();
+  context.arc(tailMainX, tailMainY, tailMainRadius, 0, Math.PI * 2);
+  context.fill();
+  context.beginPath();
+  context.arc(tailSmallX, tailSmallY, tailSmallRadius, 0, Math.PI * 2);
   context.fill();
   context.restore();
 
@@ -848,23 +964,16 @@ function drawBubbleOnCanvas(context, bubble, imageWidth, imageHeight) {
   context.strokeStyle = "#1f3d68";
   context.lineWidth = Math.max(3, Math.round(imageWidth * 0.003));
   context.fillStyle = "rgba(255, 255, 255, 0.96)";
-  roundedRectPath(context, boxX, boxY, boxWidth, boxHeight, radius);
+  context.beginPath();
+  context.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
   context.fill();
   context.stroke();
-
-  const tailBaseY = bubble.tail === "left" ? boxY + boxHeight - tailSize * 1.2 : boxY + boxHeight - tailSize * 1.15;
-  const tailBaseX = bubble.tail === "left" ? boxX + boxWidth * 0.18 : boxX + boxWidth * 0.82;
   context.beginPath();
-  context.moveTo(tailBaseX, tailBaseY);
-  context.lineTo(
-    bubble.tail === "left" ? tailBaseX - tailSize * 1.2 : tailBaseX + tailSize * 1.2,
-    tailBaseY + tailSize * 0.4
-  );
-  context.lineTo(
-    bubble.tail === "left" ? tailBaseX + tailSize * 0.25 : tailBaseX - tailSize * 0.25,
-    tailBaseY - tailSize * 0.15
-  );
-  context.closePath();
+  context.arc(tailMainX, tailMainY, tailMainRadius, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.beginPath();
+  context.arc(tailSmallX, tailSmallY, tailSmallRadius, 0, Math.PI * 2);
   context.fill();
   context.stroke();
 

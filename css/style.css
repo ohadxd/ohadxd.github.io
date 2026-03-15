@@ -1227,11 +1227,12 @@ figure,
 }
 
 .comic-bubble{
+  --bubble-scale: 1;
   position: absolute;
   display: grid;
   gap: 8px;
   padding: 16px 18px 14px;
-  border-radius: 24px;
+  border-radius: 42% 46% 44% 40% / 34% 34% 42% 40%;
   border: 2px solid #204066;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.99), rgba(244,249,255,0.96));
@@ -1241,26 +1242,53 @@ figure,
   box-shadow:
     0 16px 26px rgba(30, 64, 116, 0.18),
     inset 0 1px 0 rgba(255,255,255,0.8);
+  transform: scale(var(--bubble-scale));
+  transform-origin: center top;
 }
 
 .comic-bubble::after{
   content: "";
   position: absolute;
-  bottom: 14px;
-  width: 22px;
-  height: 22px;
+  bottom: -14px;
+  width: 18px;
+  height: 18px;
   background: rgba(255, 255, 255, 0.95);
-  border-right: 2px solid #204066;
-  border-bottom: 2px solid #204066;
-  transform: rotate(45deg);
+  border: 2px solid #204066;
+  border-radius: 50%;
+}
+
+.comic-bubble::before{
+  content: "";
+  position: absolute;
+  bottom: -28px;
+  width: 11px;
+  height: 11px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #204066;
+  border-radius: 50%;
 }
 
 .comic-bubble.tail-right::after{
-  right: 16px;
+  right: 28px;
+}
+
+.comic-bubble.tail-right::before{
+  right: 14px;
 }
 
 .comic-bubble.tail-left::after{
-  left: 16px;
+  left: 28px;
+}
+
+.comic-bubble.tail-left::before{
+  left: 14px;
+}
+
+.comic-bubble-tools{
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .comic-bubble-speaker{
@@ -1294,6 +1322,33 @@ figure,
   cursor: grab;
   box-shadow: 0 8px 16px rgba(16, 43, 71, 0.22);
   touch-action: none;
+}
+
+.comic-bubble-tail-toggle{
+  border: 0;
+  border-radius: 999px;
+  background: rgba(16, 43, 71, 0.1);
+  color: #102b47;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(16, 43, 71, 0.16);
+}
+
+.comic-bubble-size-button{
+  border: 0;
+  border-radius: 999px;
+  background: rgba(13,79,145,0.1);
+  color: #0d4f91;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(13,79,145,0.14);
 }
 
 .comic-bubble-grip:active{
@@ -1402,14 +1457,20 @@ figure,
 
 .gallery-stage .comic-bubble{
   padding: 10px 12px;
-  border-radius: 18px;
+  border-radius: 40% 44% 42% 38% / 32% 32% 40% 38%;
   box-shadow: 0 10px 16px rgba(30, 64, 116, 0.12);
 }
 
 .gallery-stage .comic-bubble::after{
   width: 16px;
   height: 16px;
-  bottom: 10px;
+  bottom: -11px;
+}
+
+.gallery-stage .comic-bubble::before{
+  width: 9px;
+  height: 9px;
+  bottom: -23px;
 }
 
 .gallery-stage .comic-bubble-speaker{
