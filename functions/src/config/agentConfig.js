@@ -153,7 +153,10 @@ const ACTIVITY_CONFIG = {
   providerModelCatalog: {
     gemini: [
       { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" },
-      { value: "imagen-4.0-generate-001", label: "Imagen 4" }
+      { value: "imagen-4.0-generate-001", label: "Imagen 4" },
+      { value: "imagen-4.0-fast-generate-001", label: "Imagen 4 Fast" },
+      { value: "imagen-4.0-ultra-generate-001", label: "Imagen 4 Ultra" },
+      { value: "imagen-3.0-generate-002", label: "Imagen 3" }
     ],
     openai: [
       { value: "gpt-image-1.5", label: "GPT Image 1.5" },
