@@ -496,8 +496,7 @@ function buildProviderSelection(config) {
     geminiAspectRatio: config.geminiAspectRatio,
     geminiGuidanceScale: config.geminiGuidanceScale,
     geminiImageSize: config.geminiImageSize,
-    supportsSeed: config.geminiImageModel.startsWith("imagen-")
-      || config.geminiImageModel === "gemini-2.5-flash-image"
+    supportsSeed: config.geminiImageModel === "gemini-2.5-flash-image"
   };
 }
 
