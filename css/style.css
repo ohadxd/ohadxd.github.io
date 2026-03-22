@@ -1707,6 +1707,10 @@ figure,
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: auto;
+  object-fit: contain;
+  background: #ffffff;
+  max-height: 680px;
 }
 
 .vibe-page .guide-figure figcaption{
@@ -1718,6 +1722,26 @@ figure,
 
 .vibe-page .guide-figure-wide{
   margin-top: 14px;
+}
+
+.vibe-page .guide-figure .img-btn{
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.vibe-page .guide-figure .img-btn::after{
+  left: auto;
+  right: 10px;
+}
+
+.vibe-stage-grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  margin-top: 16px;
+}
+
+.vibe-stage-grid-wide{
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
 }
 
 .step-media-grid{
@@ -1750,6 +1774,11 @@ figure,
   line-height: 1.7;
 }
 
+.media-guide-card ol,
+.media-guide-card ul{
+  margin-top: 0;
+}
+
 .media-guide-card-text{
   align-content: start;
   background: linear-gradient(180deg, #fffef2, #fff8dc);
@@ -1760,6 +1789,12 @@ figure,
   margin: 0;
   padding-right: 20px;
   line-height: 1.8;
+}
+
+.shot-duo{
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .file-tree-card{
@@ -1914,6 +1949,12 @@ figure,
 }
 
 @media (max-width: 640px){
+  .vibe-stage-grid,
+  .vibe-stage-grid-wide,
+  .shot-duo{
+    grid-template-columns: 1fr;
+  }
+
   .copy-card-head{
     align-items: stretch;
   }

@@ -28,7 +28,7 @@
     "about": "Codex and Visual Studio Code game building guide for children"
   }
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=20260322-vibe" />
+  <link rel="stylesheet" href="/css/style.css?v=20260322-vibe-2" />
 </head>
 <body class="vibe-page">
   <div class="wrap">
@@ -72,8 +72,9 @@
       <h2><span class="icon">🕹️</span> איך עובדים בעמוד?</h2>
       <div class="quick-items">
         <div class="quick-item"><b>1.</b> מורידים Visual Studio Code.</div>
-        <div class="quick-item"><b>2.</b> מוסיפים את Codex ומתחברים.</div>
-        <div class="quick-item"><b>3.</b> מעתיקים פרומפט, מוסיפים רעיון, ובונים משחק.</div>
+        <div class="quick-item"><b>2.</b> פותחים תיקייה ריקה חדשה למשחק.</div>
+        <div class="quick-item"><b>3.</b> מוסיפים את Codex ומתחברים.</div>
+        <div class="quick-item"><b>4.</b> מעלים assets, מדביקים פרומפט, ובונים.</div>
       </div>
     </section>
 
@@ -85,80 +86,125 @@
           <a class="btn-primary" href="https://code.visualstudio.com/Download" target="_blank" rel="noreferrer">הורדת Visual Studio Code</a>
           <span class="field-help">הקישור נפתח בלשונית חדשה ומוביל לעמוד ההורדה הרשמי.</span>
         </div>
-        <figure class="guide-figure guide-figure-wide">
-          <img src="/assets/prompt-engineering/vibe-coding/vscode-download-page.png" alt="צילום מסך של עמוד ההורדה הרשמי של Visual Studio Code" loading="lazy" />
-          <figcaption>כך נראה עמוד ההורדה הרשמי של Visual Studio Code.</figcaption>
+        <div class="callout good">
+          <div class="row">
+            <div class="badge2">TIP</div>
+            <div>
+              ברוב המחשבים בבית לוחצים על הכפתור הכחול של <b>Windows</b>. אם יש לכם מחשב של Apple עם סמל תפוח, לוחצים על <b>Mac</b>.
+            </div>
+          </div>
+        </div>
+        <figure class="guide-figure guide-figure-wide zoomable-gif">
+          <button class="img-btn" type="button" aria-label="הגדל תמונת הורדת Visual Studio Code">
+            <img src="/assets/prompt-engineering/vibe-coding/vscode-download-page.png" alt="צילום מסך של עמוד ההורדה הרשמי של Visual Studio Code עם כפתורי Windows ו-Mac" loading="lazy" />
+          </button>
+          <figcaption>כך נראה עמוד ההורדה. חפשו את הכפתור של Windows או Mac ולחצו עליו. <span class="tap-hint">לחיצה על התמונה = הגדלה</span></figcaption>
         </figure>
       </section>
 
       <section class="card">
         <h2><span class="icon">2</span> שלב 2 - מוסיפים את Codex ל-Visual Studio Code</h2>
-        <p class="kid-note">אחרי ש-VS Code מותקן, מוסיפים את תוסף Codex. התוסף פותח לכם עוזר AI בתוך סביבת העבודה, כדי שתוכלו לבנות משחקים עם הוראות פשוטות.</p>
+        <p class="kid-note">אחרי ש-VS Code מותקן, מוסיפים את Codex מתוך VS Code עצמו. זה עוזר ה-AI שבונה איתכם את המשחק.</p>
         <div class="action-row guide-actions">
-          <a class="btn-primary" href="https://marketplace.visualstudio.com/items?itemName=openai.chatgpt" target="_blank" rel="noreferrer">דף התוסף של Codex</a>
           <a class="btn-secondary" href="https://developers.openai.com/codex/ide" target="_blank" rel="noreferrer">מדריך Codex הרשמי</a>
         </div>
 
-        <div class="callout warn">
+        <div class="callout bad">
           <div class="row">
             <div class="badge2">!</div>
             <div>
-              נכון ל-22 במרץ 2026, במסמכי OpenAI של Codex ל-IDE מצוין שההרחבה עובדת עם משפחת <b>GPT-5.1-Codex</b>. אם אינכם רואים "GPT-5.2-Codex", זה תקין. בחרו את דגם Codex שמופיע אצלכם. OpenAI גם מציינת ש-Codex זמין לזמן מוגבל בחלק מחשבונות Free ו-Go, אבל לפעמים צריך חשבון אחר כדי להתחבר.
+              שימו לב: <b>Copilot</b> ו-<b>Codex</b> הם לא אותו דבר. אנחנו מחפשים את <b>Codex</b> של OpenAI.
             </div>
           </div>
         </div>
 
-        <div class="step-media-grid">
+        <div class="vibe-stage-grid">
           <article class="media-guide-card">
-            <h3>שלב א - פותחים את עמוד התוסף</h3>
-            <figure class="guide-figure">
-              <img src="/assets/prompt-engineering/vibe-coding/codex-marketplace-page.png" alt="צילום מסך של דף התוסף Codex ב-Visual Studio Marketplace" loading="lazy" />
+            <h3>שלב א - לוחצים על Extensions בתוך VS Code</h3>
+            <figure class="guide-figure zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל צילום מסך של פתיחת Extensions ב-Visual Studio Code">
+                <img src="/assets/prompt-engineering/vibe-coding/vscode-open-folder-screen.png" alt="מסך הפתיחה של VS Code עם סרגל הצד שבו מופיע כפתור Extensions" loading="lazy" />
+              </button>
             </figure>
-            <p>חפשו את התוסף הרשמי של OpenAI בשם <b>Codex – OpenAI's coding agent</b>, ואז לחצו Install מתוך VS Code או מתוך ה-Marketplace.</p>
+            <p>בתוך VS Code חפשו את סמל ה-<b>Extensions</b> בסרגל הצד. לוחצים עליו, ואז מחפשים <b>Codex</b> או <b>OpenAI</b>.</p>
           </article>
 
           <article class="media-guide-card">
-            <h3>שלב ב - מחפשים את Codex בסרגל הצד</h3>
-            <figure class="guide-figure">
-              <img src="/assets/prompt-engineering/vibe-coding/codex-extension.webp" alt="צילום מסך שמראה איפה אייקון Codex מופיע בסרגל הצד של VS Code" loading="lazy" />
+            <h3>שלב ב - מחפשים את Codex ולא מתבלבלים</h3>
+            <figure class="guide-figure zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל צילום מסך של אייקון Codex ב-VS Code">
+                <img src="/assets/prompt-engineering/vibe-coding/codex-extension.webp" alt="צילום מסך שמראה את אייקון Codex בסרגל של VS Code" loading="lazy" />
+              </button>
             </figure>
-            <p>אחרי ההתקנה, חפשו את האייקון של Codex בצד של VS Code. אם צריך, סגרו ופתחו מחדש את VS Code.</p>
+            <p>בגרסאות חדשות של VS Code הסמלים יכולים להופיע למעלה או בצד. חפשו את הסמל של <b>Codex</b>. אם אתם רואים סמל אחר כמו Copilot, זה לא מה שאנחנו צריכים כאן.</p>
           </article>
 
           <article class="media-guide-card">
             <h3>שלב ג - אם לא רואים את Codex</h3>
-            <figure class="guide-figure">
-              <img src="/assets/prompt-engineering/vibe-coding/codex-workbench-setting.webp" alt="צילום מסך של הגדרת Activity Bar orientation ב-VS Code" loading="lazy" />
+            <figure class="guide-figure zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל צילום מסך של הגדרת סרגל הצד ב-VS Code">
+                <img src="/assets/prompt-engineering/vibe-coding/codex-workbench-setting.webp" alt="צילום מסך של הגדרת סרגל הפעילות ב-VS Code" loading="lazy" />
+              </button>
             </figure>
             <p>לפעמים צריך לשנות את כיוון סרגל הצד ל-<b>vertical</b> או להצמיד את Codex ידנית, כדי לראות אותו ברור.</p>
           </article>
 
-          <article class="media-guide-card media-guide-card-text">
+          <article class="media-guide-card">
             <h3>שלב ד - מתחברים ובוחרים מודל</h3>
+            <div class="shot-duo">
+              <figure class="guide-figure zoomable-gif">
+                <button class="img-btn" type="button" aria-label="הגדל צילום מסך של בוחר המודלים ב-Codex">
+                  <img src="/assets/prompt-engineering/vibe-coding/codex-model-picker.png" alt="צילום מסך של בוחר המודלים ב-Codex" loading="lazy" />
+                </button>
+                <figcaption>אם נפתח בוחר מודלים, בוחרים דגם של Codex שמופיע אצלכם.</figcaption>
+              </figure>
+              <figure class="guide-figure zoomable-gif">
+                <button class="img-btn" type="button" aria-label="הגדל צילום מסך של בחירת רמת חשיבה ב-Codex">
+                  <img src="/assets/prompt-engineering/vibe-coding/codex-reasoning-picker.png" alt="צילום מסך של בחירת רמת החשיבה ב-Codex" loading="lazy" />
+                </button>
+                <figcaption>אפשר לבחור גם רמת חשיבה. בדרך כלל מתחילים עם <b>High</b>.</figcaption>
+              </figure>
+            </div>
             <ol class="vibe-steps">
               <li>לחצו על Codex בתוך VS Code.</li>
-              <li>בחרו <b>Sign in with ChatGPT</b> אם זו אפשרות ההתחברות שמופיעה.</li>
-              <li>אם מופיע בוחר מודלים, בחרו את דגם Codex הזמין אצלכם.</li>
-              <li>אם אין גישה, בקשו עזרה מהורה או מהמורה.</li>
+              <li>אם מופיע <b>Sign in with ChatGPT</b>, לחצו עליו והתחברו.</li>
+              <li>אם מופיע בוחר מודלים, בחרו דגם Codex זמין.</li>
+              <li>אם צריך עזרה בהתחברות, בקשו מהורה או מהמורה.</li>
             </ol>
           </article>
         </div>
       </section>
 
       <section class="card">
-        <h2><span class="icon">3</span> שלב 3 - כותבים פרומפט ומתחילים לבנות</h2>
-        <div class="quick-items">
-          <div class="quick-item">פותחים פרויקט חדש ב-VS Code.</div>
-          <div class="quick-item">מדביקים את הפרומפט המוכן.</div>
-          <div class="quick-item">מוסיפים תיאור קצר של המשחק שלכם.</div>
-          <div class="quick-item">נותנים ל-Codex לבנות את הקבצים.</div>
+        <h2><span class="icon">3</span> שלב 3 - פותחים פרויקט חדש</h2>
+        <p class="kid-note">עכשיו פותחים תיקייה ריקה חדשה. בתוך התיקייה הזאת Codex יבנה את קבצי המשחק.</p>
+        <div class="vibe-stage-grid">
+          <article class="media-guide-card">
+            <h3>שלב א - לוחצים Open Folder</h3>
+            <figure class="guide-figure zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל צילום מסך של Open Folder ב-VS Code">
+                <img src="/assets/prompt-engineering/vibe-coding/vscode-open-folder-screen.png" alt="מסך פתיחה של VS Code עם כפתור Open Folder" loading="lazy" />
+              </button>
+            </figure>
+            <p>במסך הפתיחה של VS Code לוחצים על <b>Open Folder</b>. זה אומר: לבחור את התיקייה שבה המשחק יישמר.</p>
+          </article>
+
+          <article class="media-guide-card">
+            <h3>שלב ב - יוצרים תיקייה חדשה ריקה</h3>
+            <figure class="guide-figure zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל צילום מסך של חלון בחירת תיקייה ב-VS Code">
+                <img src="/assets/prompt-engineering/vibe-coding/vscode-folder-picker.png" alt="חלון בחירת תיקייה ב-Windows עם כפתור New folder" loading="lazy" />
+              </button>
+            </figure>
+            <p>בחלון שנפתח לוחצים <b>New folder</b>, נותנים שם לתיקייה, ואז לוחצים <b>Select folder</b>. הכי טוב להתחיל מתיקייה ריקה.</p>
+          </article>
         </div>
 
         <div class="callout good">
           <div class="row">
             <div class="badge2">TIP</div>
             <div>
-              איך פותחים את המשחק? אחרי ש-Codex מסיים, פתחו את תיקיית הפרויקט ולחצו פעמיים על <b>index.html</b>, או גררו אותו לחלון של Chrome או Edge. המשחק צריך לעבוד בלי שרת ובלי התקנות נוספות.
+              איך פותחים את המשחק אחר כך? אחרי ש-Codex מסיים, פתחו את תיקיית הפרויקט ולחצו פעמיים על <b>index.html</b>, או גררו אותו לחלון של Chrome או Edge. המשחק צריך לעבוד בלי שרת ובלי התקנות נוספות.
             </div>
           </div>
         </div>
@@ -170,6 +216,93 @@
   style.css
   script.js
   assets/</pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">4</span> שלב 4 - מוסיפים תמונות וכותבים ל-Codex</h2>
+        <p class="kid-note">עכשיו עוברים לצ'אט של Codex. כאן מעלים תמונות וקבצים, ואז שולחים את ההודעה הראשונה.</p>
+        <div class="vibe-stage-grid vibe-stage-grid-wide">
+          <article class="media-guide-card">
+            <h3>כך נראה הצ'אט של Codex</h3>
+            <figure class="guide-figure zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל צילום מסך של צ'אט Codex בתוך VS Code">
+                <img src="/assets/prompt-engineering/vibe-coding/codex-chat-screen.png" alt="צילום מסך של צ'אט Codex בתוך VS Code עם קבצים מצורפים ובוחר מודלים" loading="lazy" />
+              </button>
+            </figure>
+            <p>בתחתית הצ'אט יש <b>+</b> להוספת קבצים. אחרי שמוסיפים תמונות או JSON, רואים אותם ככרטיסיות קטנות עם שם הקובץ.</p>
+          </article>
+
+          <article class="media-guide-card">
+            <h3>מה עושים כאן בדיוק?</h3>
+            <ol class="vibe-steps">
+              <li>לוחצים על <b>+</b> ומוסיפים PNG, JSON או assets אחרים.</li>
+              <li>מדביקים את הפרומפט המוכן.</li>
+              <li>מוסיפים את תיאור המשחק שלכם.</li>
+              <li>שולחים את ההודעה עם החץ.</li>
+            </ol>
+            <div class="callout good">
+              <div class="row">
+                <div class="badge2">TIP</div>
+                <div>אם צירפתם spritesheet ו-JSON, תכתבו ל-Codex במפורש להשתמש רק בהם בתור כל ה-assets של המשחק.</div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">5</span> שלב 5 - מה בדיוק להדביק?</h2>
+        <p class="kid-note">הדרך הכי פשוטה היא לשלוח הודעה ראשונה שמורכבת מ-3 חלקים: חוקים קבועים, רעיון למשחק, וקבצים שצירפתם.</p>
+        <div class="copy-card">
+          <div class="copy-card-head">
+            <strong>דוגמה מלאה להודעה ראשונה</strong>
+            <button class="btn-secondary copy-button" type="button" data-copy-target="firstFullMessage">העתקה</button>
+          </div>
+          <pre id="firstFullMessage" class="copy-source">אני מצרף עכשיו:
+- spaceshooter_spritesheet_16px.png
+- spaceshooter_spritesheet_16px_manifest.json
+
+השתמש רק ב:
+- HTML
+- CSS
+- JavaScript רגיל
+- Canvas 2D API
+
+אל תשתמש ב:
+- Three.js
+- Phaser
+- React
+- TypeScript
+- npm
+- Node.js
+- build tools
+- bundlers
+- server
+- ספריות חיצוניות
+
+המשחק חייב לעבוד על ידי פתיחת קובץ index.html בדפדפן.
+
+השתמש בתמונות שאני נותן בתור כל ה-assets של המשחק.
+אם צריך להשתמש ב-spritesheet:
+- חתוך אותו נכון
+- השתמש בו נכון
+
+אני רוצה משחק חלליות.
+
+מה יש במשחק:
+- דמות ראשית: חללית
+- אויבים: חלליות אויב ומטאורים
+- איך מקבלים נקודות: פוגעים באויבים
+- מה מחזיר חיים: לב או שיקוי חיים
+- מה הכוח המיוחד: ירי חזק יותר
+- איך עולים רמה: לפי נקודות
+- מה קורה כשמפסידים: מופיע מסך Game Over עם כפתור להתחלה מחדש
+
+עיצוב המשחק:
+- צבעים: כחול, סגול, שחור
+- רקע: חלל עם כוכבים
+- סגנון: פיקסל ארט</pre>
         </div>
       </section>
 
@@ -352,6 +485,7 @@
 
       <section class="card">
         <h2><span class="icon">✍️</span> עכשיו תאר את המשחק שלך</h2>
+        <p class="kid-note">זה החלק המשתנה. בכל משחק חדש משנים רק את הרעיון, הדמויות, הצבעים והחוקים.</p>
         <div class="copy-card">
           <div class="copy-card-head">
             <strong>מעתיקים וממלאים</strong>
@@ -377,6 +511,31 @@
       </section>
 
       <section class="card">
+        <h2><span class="icon">🧠</span> איך משנים פרומפטים שונים</h2>
+        <div class="comparison-grid">
+          <article class="compare-card compare-card-good">
+            <h3>מה אפשר לשנות</h3>
+            <ul class="compare-list">
+              <li>נושא המשחק: חלל, ג'ונגל, ים, מכוניות</li>
+              <li>הדמות הראשית: חללית, רובוט, קוסם, דינוזאור</li>
+              <li>מה מחזיר חיים ומה נותן כוח מיוחד</li>
+              <li>סגנון: פיקסל ארט, קומיקס, צבעוני, רטרו</li>
+            </ul>
+          </article>
+
+          <article class="compare-card">
+            <h3>מה עדיף להשאיר קבוע</h3>
+            <ul class="compare-list">
+              <li>החוקים הטכניים של HTML, CSS, JavaScript ו-Canvas</li>
+              <li>הדרישה לעבוד עם index.html בלי שרת</li>
+              <li>השימוש ב-assets שאתם מצרפים</li>
+              <li>התאמה גם למחשב וגם לטלפון</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
         <h2><span class="icon">🚀</span> דוגמה - משחק חלליות</h2>
         <div class="example-card">
           <pre class="copy-source">אני רוצה משחק חלליות.
@@ -396,6 +555,30 @@
 - סגנון: פיקסל ארט</pre>
         </div>
       </section>
+
+      <section class="card">
+        <h2><span class="icon">⭐</span> אם יש לכם מנוי פרימיום</h2>
+        <div class="vibe-stage-grid">
+          <article class="media-guide-card">
+            <h3>אפשר לבחור מודלים נוספים</h3>
+            <figure class="guide-figure zoomable-gif">
+              <button class="img-btn" type="button" aria-label="הגדל צילום מסך של בוחר המודלים ב-Codex">
+                <img src="/assets/prompt-engineering/vibe-coding/codex-model-picker-alt.png" alt="צילום מסך של בוחר מודלים ב-Codex עם כמה דגמים זמינים" loading="lazy" />
+              </button>
+            </figure>
+            <p>אם בחשבון שלכם מופיעים מודלים נוספים שאינם חינמיים, בדרך כלל הם חזקים יותר למשימות קשות. להתחלה אפשר לעבוד מצוין גם עם דגם Codex החינמי שמופיע אצלכם.</p>
+          </article>
+
+          <article class="media-guide-card">
+            <h3>מה לבחור?</h3>
+            <ol class="vibe-steps">
+              <li>להתחלה: בחרו דגם Codex פשוט וזמין.</li>
+              <li>אם המשחק מורכב יותר: אפשר לנסות דגם מתקדם יותר שמופיע לכם.</li>
+              <li>אם לא בטוחים: התחילו בדגם החינמי, ורק אחר כך נסו שדרוג.</li>
+            </ol>
+          </article>
+        </div>
+      </section>
     </main>
 
     <footer class="footer">
@@ -408,6 +591,11 @@
     </footer>
   </div>
 
-  <script src="/js/vibe-coding.js?v=20260322-vibe"></script>
+  <div class="lightbox" id="gifLightbox" aria-hidden="true">
+    <button class="lightbox-close" id="closeLightbox" type="button" aria-label="סגירה">✕</button>
+    <img id="lightboxImg" alt="תמונה מוגדלת" />
+  </div>
+
+  <script src="/js/vibe-coding.js?v=20260322-vibe-2"></script>
 </body>
 </html>
