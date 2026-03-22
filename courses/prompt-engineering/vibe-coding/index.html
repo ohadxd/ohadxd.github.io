@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Funlab | Vibe Coding - בונים משחקים עם AI</title>
+  <meta name="description" content="מדריך ידידותי לילדים לבניית משחקים עם Codex דרך Visual Studio Code, עם צילומי מסך, קבצי assets להורדה ופרומפטים מוכנים להעתקה." />
+  <meta name="keywords" content="Funlab, Vibe Coding, Codex, Visual Studio Code, בניית משחקים לילדים, פרומפטים לילדים, Canvas 2D" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta property="og:locale" content="he_IL" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Funlab" />
+  <meta property="og:title" content="Funlab | Vibe Coding - בונים משחקים עם AI" />
+  <meta property="og:description" content="לומדים איך להתחיל עם Codex ב-Visual Studio Code, מוסיפים assets, ומעתיקים פרומפטים מוכנים לבניית משחק." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="/courses/prompt-engineering/vibe-coding/" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "Vibe Coding - בונים משחקים עם AI",
+    "inLanguage": "he-IL",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Funlab",
+      "alternateName": ["funlab", "פאנלאב", "פנלב", "פן לב"]
+    },
+    "about": "Codex and Visual Studio Code game building guide for children"
+  }
+  </script>
+  <link rel="stylesheet" href="/css/style.css?v=20260322-vibe" />
+</head>
+<body class="vibe-page">
+  <div class="wrap">
+    <nav class="site-nav" aria-label="ניווט עליון">
+      <a href="/">בית</a>
+      <a href="/courses/">קורסים</a>
+      <a href="/courses/prompt-engineering/">מעבדת פרומפטים</a>
+      <a href="/courses/prompt-engineering/vibe-coding/">Vibe Coding</a>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="title">
+          <div class="badge"><span class="dot"></span> מדריך חדש במעבדת פרומפטים</div>
+          <h1>Vibe Coding - בונים משחקים עם AI</h1>
+          <p class="subtitle">כאן לומדים איך להשתמש ב-Codex כדי ליצור משחקים בצורה פשוטה. עוקבים אחרי השלבים, מעתיקים את הפרומפט, ומתחילים לבנות.</p>
+          <div>
+            <span class="pill">🎮 משחק ראשון</span>
+            <span class="pill">🧒 ידידותי לילדים</span>
+            <span class="pill">📁 עובד מקומית</span>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="k">מה צריך?</div>
+            <div class="v">VS Code + Codex</div>
+          </div>
+          <div class="stat">
+            <div class="k">איך בונים?</div>
+            <div class="v">Prompt אחד טוב</div>
+          </div>
+          <div class="stat">
+            <div class="k">איך פותחים?</div>
+            <div class="v">index.html בדפדפן</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="card quick-guide" aria-label="איך עובדים בעמוד">
+      <h2><span class="icon">🕹️</span> איך עובדים בעמוד?</h2>
+      <div class="quick-items">
+        <div class="quick-item"><b>1.</b> מורידים Visual Studio Code.</div>
+        <div class="quick-item"><b>2.</b> מוסיפים את Codex ומתחברים.</div>
+        <div class="quick-item"><b>3.</b> מעתיקים פרומפט, מוסיפים רעיון, ובונים משחק.</div>
+      </div>
+    </section>
+
+    <main class="grid single-col">
+      <section class="card">
+        <h2><span class="icon">1</span> שלב 1 - מורידים Visual Studio Code</h2>
+        <p class="kid-note">לפני שמתחילים, צריך להוריד את Visual Studio Code. זה המקום שבו כותבים קוד, שומרים קבצים ופותחים את הפרויקט.</p>
+        <div class="action-row guide-actions">
+          <a class="btn-primary" href="https://code.visualstudio.com/Download" target="_blank" rel="noreferrer">הורדת Visual Studio Code</a>
+          <span class="field-help">הקישור נפתח בלשונית חדשה ומוביל לעמוד ההורדה הרשמי.</span>
+        </div>
+        <figure class="guide-figure guide-figure-wide">
+          <img src="/assets/prompt-engineering/vibe-coding/vscode-download-page.png" alt="צילום מסך של עמוד ההורדה הרשמי של Visual Studio Code" loading="lazy" />
+          <figcaption>כך נראה עמוד ההורדה הרשמי של Visual Studio Code.</figcaption>
+        </figure>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">2</span> שלב 2 - מוסיפים את Codex ל-Visual Studio Code</h2>
+        <p class="kid-note">אחרי ש-VS Code מותקן, מוסיפים את תוסף Codex. התוסף פותח לכם עוזר AI בתוך סביבת העבודה, כדי שתוכלו לבנות משחקים עם הוראות פשוטות.</p>
+        <div class="action-row guide-actions">
+          <a class="btn-primary" href="https://marketplace.visualstudio.com/items?itemName=openai.chatgpt" target="_blank" rel="noreferrer">דף התוסף של Codex</a>
+          <a class="btn-secondary" href="https://developers.openai.com/codex/ide" target="_blank" rel="noreferrer">מדריך Codex הרשמי</a>
+        </div>
+
+        <div class="callout warn">
+          <div class="row">
+            <div class="badge2">!</div>
+            <div>
+              נכון ל-22 במרץ 2026, במסמכי OpenAI של Codex ל-IDE מצוין שההרחבה עובדת עם משפחת <b>GPT-5.1-Codex</b>. אם אינכם רואים "GPT-5.2-Codex", זה תקין. בחרו את דגם Codex שמופיע אצלכם. OpenAI גם מציינת ש-Codex זמין לזמן מוגבל בחלק מחשבונות Free ו-Go, אבל לפעמים צריך חשבון אחר כדי להתחבר.
+            </div>
+          </div>
+        </div>
+
+        <div class="step-media-grid">
+          <article class="media-guide-card">
+            <h3>שלב א - פותחים את עמוד התוסף</h3>
+            <figure class="guide-figure">
+              <img src="/assets/prompt-engineering/vibe-coding/codex-marketplace-page.png" alt="צילום מסך של דף התוסף Codex ב-Visual Studio Marketplace" loading="lazy" />
+            </figure>
+            <p>חפשו את התוסף הרשמי של OpenAI בשם <b>Codex – OpenAI's coding agent</b>, ואז לחצו Install מתוך VS Code או מתוך ה-Marketplace.</p>
+          </article>
+
+          <article class="media-guide-card">
+            <h3>שלב ב - מחפשים את Codex בסרגל הצד</h3>
+            <figure class="guide-figure">
+              <img src="/assets/prompt-engineering/vibe-coding/codex-extension.webp" alt="צילום מסך שמראה איפה אייקון Codex מופיע בסרגל הצד של VS Code" loading="lazy" />
+            </figure>
+            <p>אחרי ההתקנה, חפשו את האייקון של Codex בצד של VS Code. אם צריך, סגרו ופתחו מחדש את VS Code.</p>
+          </article>
+
+          <article class="media-guide-card">
+            <h3>שלב ג - אם לא רואים את Codex</h3>
+            <figure class="guide-figure">
+              <img src="/assets/prompt-engineering/vibe-coding/codex-workbench-setting.webp" alt="צילום מסך של הגדרת Activity Bar orientation ב-VS Code" loading="lazy" />
+            </figure>
+            <p>לפעמים צריך לשנות את כיוון סרגל הצד ל-<b>vertical</b> או להצמיד את Codex ידנית, כדי לראות אותו ברור.</p>
+          </article>
+
+          <article class="media-guide-card media-guide-card-text">
+            <h3>שלב ד - מתחברים ובוחרים מודל</h3>
+            <ol class="vibe-steps">
+              <li>לחצו על Codex בתוך VS Code.</li>
+              <li>בחרו <b>Sign in with ChatGPT</b> אם זו אפשרות ההתחברות שמופיעה.</li>
+              <li>אם מופיע בוחר מודלים, בחרו את דגם Codex הזמין אצלכם.</li>
+              <li>אם אין גישה, בקשו עזרה מהורה או מהמורה.</li>
+            </ol>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">3</span> שלב 3 - כותבים פרומפט ומתחילים לבנות</h2>
+        <div class="quick-items">
+          <div class="quick-item">פותחים פרויקט חדש ב-VS Code.</div>
+          <div class="quick-item">מדביקים את הפרומפט המוכן.</div>
+          <div class="quick-item">מוסיפים תיאור קצר של המשחק שלכם.</div>
+          <div class="quick-item">נותנים ל-Codex לבנות את הקבצים.</div>
+        </div>
+
+        <div class="callout good">
+          <div class="row">
+            <div class="badge2">TIP</div>
+            <div>
+              איך פותחים את המשחק? אחרי ש-Codex מסיים, פתחו את תיקיית הפרויקט ולחצו פעמיים על <b>index.html</b>, או גררו אותו לחלון של Chrome או Edge. המשחק צריך לעבוד בלי שרת ובלי התקנות נוספות.
+            </div>
+          </div>
+        </div>
+
+        <div class="file-tree-card">
+          <strong>מבנה קבצים פשוט להתחלה:</strong>
+          <pre class="mini-file-tree">project-folder/
+  index.html
+  style.css
+  script.js
+  assets/</pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">🧰</span> קבצי assets להורדה</h2>
+        <p class="kid-note">אם רוצים לבנות משחק חלליות, אפשר להתחיל מה-sprite sheet ומה-JSON שכבר מוכנים לכם. הורידו אותם, שימו בתוך תיקייה בשם <b>assets</b>, ואז תגידו ל-Codex להשתמש בהם.</p>
+
+        <div class="asset-download-grid">
+          <article class="asset-card">
+            <h3>ה-Sprite Sheet</h3>
+            <figure class="guide-figure asset-preview">
+              <img src="/downloads/vibe-coding/space-shooter-assets/spaceshooter_spritesheet_16px.png" alt="תצוגה מקדימה של sprite sheet למשחק חלליות" loading="lazy" />
+            </figure>
+            <p>התמונה מכילה כמה דמויות ואובייקטים קטנים של משחק חלליות.</p>
+            <div class="asset-actions">
+              <a class="btn-secondary" href="/downloads/vibe-coding/space-shooter-assets/spaceshooter_spritesheet_16px.png" download>הורדת PNG</a>
+            </div>
+          </article>
+
+          <article class="asset-card">
+            <h3>קובץ ה-JSON</h3>
+            <p>ה-JSON מסביר ל-Codex שכל תא הוא <b>16x16</b>, שיש <b>8 עמודות</b>, ואיזה sprite נמצא בכל אינדקס.</p>
+            <div class="fact-grid">
+              <div class="fact-card">
+                <strong>cell size</strong>
+                <span>16px</span>
+              </div>
+              <div class="fact-card">
+                <strong>columns</strong>
+                <span>8</span>
+              </div>
+              <div class="fact-card">
+                <strong>rows</strong>
+                <span>2</span>
+              </div>
+              <div class="fact-card">
+                <strong>sprites</strong>
+                <span>12</span>
+              </div>
+            </div>
+            <div class="asset-actions">
+              <a class="btn-secondary" href="/downloads/vibe-coding/space-shooter-assets/spaceshooter_spritesheet_16px_manifest.json" download>הורדת JSON</a>
+            </div>
+          </article>
+
+          <article class="asset-card">
+            <h3>תיקיית assets מוכנה</h3>
+            <p>אם יותר נוח, הורידו הכל בבת אחת, חלצו את הקבצים, והעתיקו אותם לתוך <b>assets/</b> בפרויקט שלכם.</p>
+            <div class="asset-actions">
+              <a class="btn-primary" href="/downloads/vibe-coding/space-shooter-assets.zip" download>הורדת ZIP</a>
+            </div>
+            <pre class="mini-file-tree">assets/
+  spaceshooter_spritesheet_16px.png
+  spaceshooter_spritesheet_16px_manifest.json</pre>
+          </article>
+        </div>
+      </section>
+
+      <section class="card vibe-highlight-card">
+        <h2><span class="icon">📌</span> תנאים קבועים לכל פרומפט ראשוני</h2>
+        <div class="copy-card">
+          <div class="copy-card-head">
+            <strong>העתיקו את החלק הזה כמו שהוא</strong>
+            <button class="btn-secondary copy-button" type="button" data-copy-target="fixedPromptRules">העתקה</button>
+          </div>
+          <pre id="fixedPromptRules" class="copy-source">השתמש רק ב:
+- HTML
+- CSS
+- JavaScript רגיל
+- Canvas 2D
+
+אל תשתמש ב:
+- Three.js
+- Phaser
+- React
+- TypeScript
+- npm
+- Node.js
+- build tools
+- bundlers
+- server
+- ספריות חיצוניות
+
+המשחק חייב לעבוד על ידי פתיחת קובץ index.html בדפדפן.
+
+אם אני נותן תמונות:
+- השתמש בתמונות שאני נותן בתור כל ה-assets של המשחק
+- אם יש spritesheet, חתוך אותו נכון והשתמש בו נכון
+
+המשחק חייב לעבוד גם במחשב וגם בטלפון.</pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">✅</span> במה כדאי לבנות משחקים</h2>
+        <div class="comparison-grid">
+          <article class="compare-card compare-card-good">
+            <h3>כן</h3>
+            <ul class="compare-list">
+              <li>HTML</li>
+              <li>CSS</li>
+              <li>JavaScript</li>
+              <li>Canvas 2D</li>
+            </ul>
+          </article>
+
+          <article class="compare-card compare-card-bad">
+            <h3>לא</h3>
+            <ul class="compare-list">
+              <li>React</li>
+              <li>Three.js</li>
+              <li>npm</li>
+              <li>Node.js</li>
+              <li>build tools</li>
+              <li>frameworks מסובכים</li>
+            </ul>
+          </article>
+        </div>
+        <p class="kid-note">המטרה היא לבנות משחק פשוט שעובד מהר ובלי התקנות מסובכות.</p>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">📋</span> פרומפט מוכן להדבקה</h2>
+        <div class="copy-card">
+          <div class="copy-card-head">
+            <strong>העתקה בלחיצה אחת</strong>
+            <button class="btn-secondary copy-button" type="button" data-copy-target="readyPrompt">העתקה</button>
+          </div>
+          <pre id="readyPrompt" class="copy-source">בנה משחק מלא שפועל מקומית בלי התקנות ובלי שרת.
+
+השתמש רק ב:
+- HTML
+- CSS
+- JavaScript רגיל
+- Canvas 2D API
+
+אל תשתמש ב:
+- Three.js
+- Phaser
+- React
+- TypeScript
+- npm
+- Node.js
+- build tools
+- bundlers
+- server
+- ספריות חיצוניות
+
+המשחק חייב לעבוד על ידי פתיחת קובץ index.html בדפדפן.
+
+השתמש בתמונות שאני נותן בתור כל ה-assets של המשחק.
+אם צריך להשתמש ב-spritesheet:
+- חתוך אותו נכון
+- השתמש בו נכון
+
+דרישות המשחק:
+- דמות ראשית / שחקן
+- אויבים או מכשולים
+- ניקוד
+- חיים
+- שלבים או רמות
+- מסך הפסד
+- כפתור התחלה מחדש
+
+התאמה:
+- המשחק חייב לעבוד גם במחשב וגם בטלפון
+- במחשב להשתמש במקלדת
+- בטלפון להוסיף כפתורי מגע על המסך
+- להתאים למסכים קטנים וגדולים
+
+מבנה קבצים:
+- index.html
+- style.css
+- script.js
+- assets/
+
+הקוד צריך להיות פשוט, ברור ומסודר.</pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">✍️</span> עכשיו תאר את המשחק שלך</h2>
+        <div class="copy-card">
+          <div class="copy-card-head">
+            <strong>מעתיקים וממלאים</strong>
+            <button class="btn-secondary copy-button" type="button" data-copy-target="gameIdeaPrompt">העתקה</button>
+          </div>
+          <pre id="gameIdeaPrompt" class="copy-source">אני רוצה משחק על:
+[כאן לכתוב רעיון]
+
+מה יש במשחק:
+- דמות ראשית:
+- אויבים:
+- איך מקבלים נקודות:
+- מה מחזיר חיים:
+- מה הכוח המיוחד:
+- איך עולים רמה:
+- מה קורה כשמפסידים:
+
+עיצוב המשחק:
+- צבעים:
+- רקע:
+- סגנון:</pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icon">🚀</span> דוגמה - משחק חלליות</h2>
+        <div class="example-card">
+          <pre class="copy-source">אני רוצה משחק חלליות.
+
+מה יש במשחק:
+- דמות ראשית: חללית
+- אויבים: חלליות אויב ומטאורים
+- איך מקבלים נקודות: פוגעים באויבים
+- מה מחזיר חיים: לב או שיקוי חיים
+- מה הכוח המיוחד: ירי חזק יותר
+- איך עולים רמה: לפי נקודות
+- מה קורה כשמפסידים: מופיע מסך Game Over עם כפתור להתחלה מחדש
+
+עיצוב המשחק:
+- צבעים: כחול, סגול, שחור
+- רקע: חלל עם כוכבים
+- סגנון: פיקסל ארט</pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="small">Funlab | פאנלאב | פנלב | פן לב</div>
+      <div class="back-links">
+        <a href="/courses/prompt-engineering/">חזרה למעבדת פרומפטים</a>
+        <a href="/courses/">חזרה לקורסים</a>
+        <a href="/">חזרה לבית</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/js/vibe-coding.js?v=20260322-vibe"></script>
+</body>
+</html>

@@ -1689,3 +1689,240 @@ figure,
   text-align: center;
   color: var(--muted);
 }
+
+.vibe-page .guide-actions{
+  align-items: center;
+}
+
+.vibe-page .guide-figure{
+  margin: 0;
+  border: 1px solid #d8e8f8;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  box-shadow: 0 8px 20px rgba(41,79,138,0.08);
+}
+
+.vibe-page .guide-figure img{
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.vibe-page .guide-figure figcaption{
+  padding: 12px 14px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.vibe-page .guide-figure-wide{
+  margin-top: 14px;
+}
+
+.step-media-grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 16px;
+}
+
+.media-guide-card{
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #d8e8f8;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  box-shadow: 0 8px 20px rgba(41,79,138,0.08);
+}
+
+.media-guide-card h3,
+.asset-card h3,
+.compare-card h3{
+  margin: 0;
+}
+
+.media-guide-card p,
+.asset-card p{
+  margin: 0;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.media-guide-card-text{
+  align-content: start;
+  background: linear-gradient(180deg, #fffef2, #fff8dc);
+  border-color: #f2e2a4;
+}
+
+.vibe-steps{
+  margin: 0;
+  padding-right: 20px;
+  line-height: 1.8;
+}
+
+.file-tree-card{
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.mini-file-tree{
+  margin: 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow-x: auto;
+  direction: ltr;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.asset-download-grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 16px;
+}
+
+.asset-card{
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #d8e8f8;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(41,79,138,0.08);
+}
+
+.asset-preview{
+  align-self: start;
+}
+
+.asset-preview img{
+  image-rendering: pixelated;
+  object-fit: contain;
+  background:
+    linear-gradient(45deg, #eef6ff 25%, transparent 25%, transparent 75%, #eef6ff 75%, #eef6ff),
+    linear-gradient(45deg, #eef6ff 25%, transparent 25%, transparent 75%, #eef6ff 75%, #eef6ff);
+  background-position: 0 0, 8px 8px;
+  background-size: 16px 16px;
+}
+
+.asset-actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fact-grid{
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fact-card{
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f4fbff;
+  border: 1px solid #d8e8f8;
+}
+
+.fact-card strong{
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.fact-card span{
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.vibe-highlight-card{
+  border-color: #f3d37a;
+  box-shadow: 0 10px 24px rgba(214,158,46,0.14);
+}
+
+.copy-card{
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.copy-card-head{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.copy-source{
+  margin: 0;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #d8e8f8;
+  background: #f8fbff;
+  color: var(--text);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 15px;
+}
+
+.copy-button.is-copied{
+  border-color: #16a34a;
+  background: #effcf4;
+  color: #166534;
+}
+
+.comparison-grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.compare-card{
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #d8e8f8;
+}
+
+.compare-card-good{
+  background: #effcf4;
+  border-color: #bdeccf;
+}
+
+.compare-card-bad{
+  background: #fff1f2;
+  border-color: #f5b9bf;
+}
+
+.compare-list{
+  margin: 12px 0 0;
+  padding-right: 20px;
+  line-height: 1.9;
+}
+
+.example-card{
+  margin-top: 14px;
+}
+
+@media (max-width: 640px){
+  .copy-card-head{
+    align-items: stretch;
+  }
+
+  .copy-card-head .btn-secondary{
+    width: 100%;
+  }
+
+  .fact-grid{
+    grid-template-columns: 1fr 1fr;
+  }
+}

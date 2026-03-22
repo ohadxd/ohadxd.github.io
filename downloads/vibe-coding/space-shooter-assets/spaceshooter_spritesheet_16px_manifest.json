@@ -1,0 +1,55 @@
+{
+  "cell_size": 16,
+  "columns": 8,
+  "rows": 2,
+  "sprites": [
+    {
+      "index": 0,
+      "name": "player_ship"
+    },
+    {
+      "index": 1,
+      "name": "player_laser_small"
+    },
+    {
+      "index": 2,
+      "name": "player_laser_big"
+    },
+    {
+      "index": 3,
+      "name": "enemy_scout"
+    },
+    {
+      "index": 4,
+      "name": "enemy_bug"
+    },
+    {
+      "index": 5,
+      "name": "enemy_ufo"
+    },
+    {
+      "index": 6,
+      "name": "life_heart"
+    },
+    {
+      "index": 7,
+      "name": "energy_orb"
+    },
+    {
+      "index": 8,
+      "name": "boost_arrow"
+    },
+    {
+      "index": 9,
+      "name": "enemy_bullet"
+    },
+    {
+      "index": 10,
+      "name": "shield_pickup"
+    },
+    {
+      "index": 11,
+      "name": "explosion_small"
+    }
+  ]
+}
