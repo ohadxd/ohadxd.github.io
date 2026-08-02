@@ -155,16 +155,15 @@ const ACTIVITY_CONFIG = {
   ],
   providerModelCatalog: {
     gemini: [
-      { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" },
-      { value: "imagen-4.0-generate-001", label: "Imagen 4" },
-      { value: "imagen-4.0-fast-generate-001", label: "Imagen 4 Fast" },
-      { value: "imagen-4.0-ultra-generate-001", label: "Imagen 4 Ultra" },
-      { value: "imagen-3.0-generate-002", label: "Imagen 3" }
+      { value: "gemini-3.1-flash-image", label: "Gemini 3.1 Flash Image (Recommended)" },
+      { value: "gemini-3.1-flash-lite-image", label: "Gemini 3.1 Flash Lite Image (Budget)" },
+      { value: "gemini-3-pro-image", label: "Gemini 3 Pro Image (Premium)" },
+      { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image (Legacy)" }
     ],
     openai: [
-      { value: "gpt-image-1.5", label: "GPT Image 1.5" },
-      { value: "gpt-image-1", label: "GPT Image 1" },
-      { value: "gpt-image-1-mini", label: "GPT Image 1 Mini" }
+      { value: "gpt-image-2", label: "GPT Image 2 (Recommended)" },
+      { value: "gpt-image-1.5", label: "GPT Image 1.5 (Legacy)" },
+      { value: "gpt-image-1-mini", label: "GPT Image 1 Mini (Budget, Legacy)" }
     ]
   },
   adminPromptLabDefaults: {

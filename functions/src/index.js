@@ -76,7 +76,7 @@ function sanitizePromptLabAdminConfig(rawData = {}) {
   const geminiGuidanceScale = Number(rawData.geminiGuidanceScale);
   const spendLookbackDays = Number(rawData.spendLookbackDays);
   const allowedGeminiAspectRatios = new Set(["1:1", "3:4", "4:3", "9:16", "16:9"]);
-  const allowedGeminiImageSizes = new Set(["1K", "2K"]);
+  const allowedGeminiImageSizes = new Set(["1K", "2K", "4K"]);
   const allowedOpenAiQualities = new Set(["low", "medium", "high", "auto"]);
   const allowedOpenAiSizes = new Set(["1024x1024", "1536x1024", "1024x1536", "auto"]);
   const allowedBillingLocations = new Set(["US", "EU", "us", "eu"]);
@@ -528,27 +528,39 @@ function buildProviderSelection(config) {
     };
   }
 
+  let geminiImageSize = config.geminiImageSize;
+  if (["gemini-2.5-flash-image", "gemini-3.1-flash-lite-image"].includes(config.geminiImageModel)) {
+    geminiImageSize = "1K";
+  }
+
   return {
     provider: "gemini",
     imageModel: config.geminiImageModel,
     geminiAspectRatio: config.geminiAspectRatio,
     geminiGuidanceScale: config.geminiGuidanceScale,
-    geminiImageSize: config.geminiImageSize,
+    geminiImageSize,
     supportsSeed: config.geminiImageModel === "gemini-2.5-flash-image"
   };
 }
 
-async function generateImageWithGemini(ai, finalPromptText, seed) {
+async function generateImageWithGemini(ai, finalPromptText, seed, promptConfig) {
   const config = {
     responseModalities: ["TEXT", "IMAGE"]
   };
+
+  if (promptConfig.imageModel.startsWith("gemini-3")) {
+    config.imageConfig = {
+      aspectRatio: promptConfig.geminiAspectRatio,
+      imageSize: promptConfig.geminiImageSize
+    };
+  }
 
   if (Number.isInteger(seed)) {
     config.seed = seed;
   }
 
   const response = await ai.models.generateContent({
-    model: ACTIVITY_CONFIG.imageModel,
+    model: promptConfig.imageModel,
     contents: finalPromptText,
     config
   });
@@ -1713,7 +1725,7 @@ exports.generateImage = onCall(
         if (providerSelection.imageModel.startsWith("imagen-")) {
           image = await generateImageWithImagen(ai, finalPromptEnglish, effectiveSeed, providerSelection);
         } else {
-          image = await generateImageWithGemini(ai, finalPromptEnglish, effectiveSeed);
+          image = await generateImageWithGemini(ai, finalPromptEnglish, effectiveSeed, providerSelection);
         }
       }
     } catch (error) {
