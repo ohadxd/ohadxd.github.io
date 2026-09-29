@@ -52,7 +52,9 @@ function sanitizePromptSteps(rawSteps = {}, lessonKey = DEFAULT_LESSON_KEY) {
   for (const step of lesson.steps) {
     steps[step.key] = normalizeText(
       rawSteps[step.key],
-      ACTIVITY_CONFIG.maxStepLength
+      lesson.key === "free-lab"
+        ? ACTIVITY_CONFIG.maxFreePromptLength
+        : ACTIVITY_CONFIG.maxStepLength
     );
   }
 
@@ -80,7 +82,9 @@ function buildValidationResponse(steps, lessonKey = DEFAULT_LESSON_KEY) {
       isComplete: true,
       missingSteps: [],
       message:
-        lesson.key === "comic-lab"
+        lesson.key === "free-lab"
+          ? "הפרומפט מוכן לבדיקה. קבלו ציון ומשוב לפני יצירת התמונה."
+          : lesson.key === "comic-lab"
           ? "מעולה. כל חמשת השלבים מלאים, ואפשר להכין עכשיו פאנל קומיקס מסודר."
           : ACTIVITY_CONFIG.readyMessage,
       nextSuggestedStep: null
@@ -92,7 +96,9 @@ function buildValidationResponse(steps, lessonKey = DEFAULT_LESSON_KEY) {
   return {
     isComplete: false,
     missingSteps,
-    message: `${ACTIVITY_CONFIG.missingPrefix} ${missingLabels}.`,
+    message: lesson.key === "free-lab"
+      ? "כתבו פרומפט חופשי לתמונה כדי לקבל ציון ומשוב."
+      : `${ACTIVITY_CONFIG.missingPrefix} ${missingLabels}.`,
     nextSuggestedStep: missingSteps[0].key
   };
 }
@@ -107,6 +113,16 @@ function sanitizePromptField(value) {
 
 function sanitizeEnglishPromptField(value) {
   return sanitizePromptField(value).replace(/[^\x20-\x7E]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function containsDisallowedFreePromptContent(value) {
+  const text = String(value || "")
+    .normalize("NFKC")
+    .replace(/[\u0591-\u05C7]/g, "")
+    .toLowerCase();
+  const disallowedTerms = /(?:^|[^\p{L}])(?:[ובלמשהכ]?)(?:דם|מדממ\p{L}*|אלימ\p{L}*|פציע\p{L}*|רצח\p{L}*|הריג\p{L}*|להרוג|התאבד\p{L}*|נשק|אקדח|רובה|סכין|עירו\p{L}*|ערו\p{L}*|פורנו\p{L}*|סקס\p{L}*|מיני\p{L}*|כתובת|טלפון|אימייל|דוא[״"']?ל|תעודת זהות|blood|gore|violent|violence|injur\p{L}*|murder|kill\p{L}*|suicid\p{L}*|self[ -]?harm|gun|rifle|knife|nude|naked|porn\p{L}*|sex\p{L}*|hate|address|phone|e-?mail)(?=$|[^\p{L}])/iu;
+  return disallowedTerms.test(text) || /[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(text) ||
+    /(?:\+?972|0)(?:[\s-]?\d){8,9}/.test(text);
 }
 
 function containsHebrew(value) {
@@ -158,6 +174,10 @@ function buildFinalHebrewPrompt(
 ) {
   const lesson = getLessonDefinition(lessonKey);
 
+  if (lesson.key === "free-lab") {
+    return sanitizePromptField(steps.prompt);
+  }
+
   if (lesson.key === "comic-lab") {
     const panelScene = sanitizePromptField(steps.place);
     const dialogue = sanitizePromptField(steps.action);
@@ -201,6 +221,15 @@ function buildFinalEnglishPrompt(
 ) {
   const lesson = getLessonDefinition(lessonKey);
   const promptGuardrails = sanitizeEnglishPromptField(guardrails);
+
+  if (lesson.key === "free-lab") {
+    return [
+      "Create a child-friendly image based on this student description:",
+      sanitizeEnglishPromptField(steps.prompt),
+      "Keep the scene suitable for children aged 10–12.",
+      promptGuardrails ? `Quality guardrails: ${promptGuardrails}.` : ""
+    ].filter(Boolean).join(" ");
+  }
 
   if (lesson.key === "comic-lab") {
     const panelScene = sanitizeEnglishPromptField(steps.place);
@@ -266,6 +295,28 @@ function buildSessionDraft(steps, validation, lessonKey = DEFAULT_LESSON_KEY) {
   };
 }
 
+function checkFreePromptGeneration(assessment, assessmentHash, promptHash, confirmedLowScore, prompt) {
+  if (containsDisallowedFreePromptContent(prompt) ||
+      assessmentHash !== promptHash || !assessment?.isSafe || !assessment.englishPrompt ||
+      !Number.isInteger(assessment.score) || assessment.score < 0 || assessment.score > 100) {
+    return {
+      allowed: false,
+      message: "צריך לקבל ציון ובדיקת בטיחות לפרומפט הנוכחי לפני יצירת התמונה."
+    };
+  }
+
+  if (assessment.score < ACTIVITY_CONFIG.lowFreePromptScore && confirmedLowScore !== true) {
+    return {
+      allowed: false,
+      needsConfirmation: true,
+      score: assessment.score,
+      message: "הציון נמוך. אפשר לשפר את הפרומפט או לאשר שרוצים ליצור תמונה בכל זאת."
+    };
+  }
+
+  return { allowed: true };
+}
+
 module.exports = {
   buildComicCharacterBlueprintEnglish,
   buildComicCharacterBlueprintHebrew,
@@ -274,6 +325,8 @@ module.exports = {
   buildFinalHebrewPrompt,
   buildSessionDraft,
   buildValidationResponse,
+  checkFreePromptGeneration,
+  containsDisallowedFreePromptContent,
   containsHebrew,
   getLessonDefinition,
   normalizeClassCode,

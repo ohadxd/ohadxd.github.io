@@ -46,6 +46,23 @@ const LESSON_DEFINITIONS = {
       }
     ]
   },
+  "free-lab": {
+    key: "free-lab",
+    title: "פרומפט חופשי",
+    shortTitle: "חופשי",
+    description: "כותבים פרומפט אחד לתמונה ומקבלים ציון ומשוב לפני היצירה.",
+    generationLimit: 6,
+    generateButtonLabel: "יצירת תמונה",
+    steps: [
+      {
+        key: "prompt",
+        label: "פרומפט חופשי",
+        shortLabel: "פרומפט",
+        placeholder: "תארו את התמונה שתרצו ליצור",
+        missingMessage: "כתבו פרומפט לתמונה לפני שמבקשים ציון."
+      }
+    ]
+  },
   "comic-lab": {
     key: "comic-lab",
     title: "יוצרים קומיקס",
@@ -120,6 +137,8 @@ const ACTIVITY_CONFIG = {
   defaultSeatCount: 25,
   seatClaimMinutes: 120,
   maxStepLength: 220,
+  maxFreePromptLength: 1200,
+  lowFreePromptScore: 70,
   maxNameLength: 40,
   welcomeMessage:
     "איזה יופי, הצטרפתם לפעילות. עכשיו נבנה פרומפט חכם צעד אחרי צעד.",

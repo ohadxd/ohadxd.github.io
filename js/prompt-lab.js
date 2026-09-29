@@ -1,4 +1,5 @@
 import {
+  evaluateFreePromptCallable,
   generateImageCallable,
   getDownloadGeneratedImageUrl,
   getSeatMapCallable,
@@ -9,7 +10,7 @@ import {
   setRealtimeClientConfig,
   subscribeSeatMap,
   validatePromptStepsCallable
-} from "/js/functions-client.js?v=20260315-comic-2";
+} from "/js/functions-client.js?v=20260929-free-prompt-1";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
@@ -51,6 +52,23 @@ const COMIC_LAYOUTS = {
 };
 
 const LESSON_DEFINITIONS = {
+  "free-lab": {
+    key: "free-lab",
+    leadText: "כותבים פרומפט אחד לתמונה, מקבלים ציון ומשוב, ואז בוחרים אם ליצור.",
+    activityHeading: "כותבים פרומפט חופשי",
+    activityIntro: "כתבו את הרעיון שלכם. אחרי בדיקת איכות ובטיחות תוכלו ליצור תמונה.",
+    generateButtonLabel: "יצירת תמונה",
+    emptyGalleryText: "עדיין אין כאן יצירות. התמונה הראשונה שלכם תופיע כאן.",
+    quickItems: [
+      "1. חושבים מה רוצים לראות בתמונה.",
+      "2. כותבים פרומפט חופשי בתיבה אחת.",
+      "3. מקבלים ציון וטיפ לשיפור.",
+      "4. משפרים את הפרומפט אם רוצים.",
+      "5. יוצרים תמונה אחרי בדיקת בטיחות."
+    ],
+    guardrailText: "המערכת בודקת התאמה לילדים. אם הציון נמוך, תתבקשו לאשר לפני יצירת התמונה.",
+    steps: { prompt: {} }
+  },
   "image-lab": {
     key: "image-lab",
     leadText: "במסלול הזה בונים תמונה אחת ב-5 שלבים קבועים.",
@@ -208,6 +226,13 @@ const leaveSeatButton = document.getElementById("leaveSeatButton");
 const refreshSeatsButton = document.getElementById("refreshSeatsButton");
 const validateButton = document.getElementById("validateButton");
 const generateButton = document.getElementById("generateButton");
+const freePromptField = document.getElementById("freePromptField");
+const freePromptInput = document.getElementById("freePromptInput");
+const freePromptFeedback = document.getElementById("freePromptFeedback");
+const freePromptScore = document.getElementById("freePromptScore");
+const freePromptTip = document.getElementById("freePromptTip");
+const lowScoreConfirmLabel = document.getElementById("lowScoreConfirmLabel");
+const lowScoreConfirm = document.getElementById("lowScoreConfirm");
 const clearButton = document.getElementById("clearButton");
 const statusBox = document.getElementById("statusBox");
 const statusTitle = document.getElementById("statusTitle");
@@ -294,7 +319,8 @@ const state = {
   seatRealtimeUnsubscribe: null,
   featuredUsageId: "",
   currentSeed: null,
-  comicLayoutEditMode: false
+  comicLayoutEditMode: false,
+  freePromptAssessment: null
 };
 
 function normalizeClassCode(value) {
@@ -322,6 +348,10 @@ function buildEmptySteps(lessonKey = DEFAULT_LESSON_KEY) {
 }
 
 function collectSteps() {
+  if (state.lessonKey === "free-lab") {
+    return { prompt: freePromptInput.value.trim() };
+  }
+
   return stepInputs.reduce((steps, input) => {
     steps[input.dataset.stepKey] = input.value.trim();
     return steps;
@@ -329,6 +359,10 @@ function collectSteps() {
 }
 
 function buildHebrewPromptPreview(steps, lessonKey = state.lessonKey) {
+  if (normalizeLessonKey(lessonKey) === "free-lab") {
+    return steps.prompt || "-";
+  }
+
   if (normalizeLessonKey(lessonKey) === "comic-lab") {
     return [
       `דמויות קבועות: ${steps.character || "-"}`,
@@ -1148,6 +1182,7 @@ function resetGalleryState() {
 }
 
 function fillSteps(steps = buildEmptySteps(state.lessonKey)) {
+  freePromptInput.value = steps.prompt || "";
   for (const input of stepInputs) {
     input.value = steps[input.dataset.stepKey] || "";
   }
@@ -1241,7 +1276,29 @@ function showStatus(kind, title, message, missingSteps = []) {
 function enableActivity() {
   activityCard.hidden = false;
   validateButton.disabled = false;
-  generateButton.disabled = false;
+  updateFreeGenerateAvailability();
+}
+
+function updateFreeGenerateAvailability() {
+  if (state.lessonKey !== "free-lab") {
+    generateButton.disabled = !state.sessionId;
+    return;
+  }
+
+  const assessment = state.freePromptAssessment;
+  generateButton.disabled = !state.sessionId || !assessment ||
+    assessment.prompt !== freePromptInput.value.trim() ||
+    (assessment.requiresConfirmation && !lowScoreConfirm.checked);
+}
+
+function resetFreeAssessment() {
+  state.freePromptAssessment = null;
+  freePromptFeedback.hidden = true;
+  freePromptScore.textContent = "";
+  freePromptTip.textContent = "";
+  lowScoreConfirm.checked = false;
+  lowScoreConfirmLabel.hidden = true;
+  updateFreeGenerateAvailability();
 }
 
 function setLessonChooserDisabled(isDisabled) {
@@ -1285,6 +1342,7 @@ function renderExampleGrid(stepKey, examples = []) {
 
 function renderLessonUi() {
   const lesson = getLessonDefinition(state.lessonKey);
+  const isFree = lesson.key === "free-lab";
 
   lessonLeadText.textContent = lesson.leadText;
   lessonGuardrailText.textContent = lesson.guardrailText;
@@ -1292,12 +1350,19 @@ function renderLessonUi() {
   activityIntro.textContent = lesson.activityIntro;
   generateButton.textContent = lesson.generateButtonLabel;
   studentGalleryEmpty.textContent = lesson.emptyGalleryText;
+  freePromptField.hidden = !isFree;
+  validateButton.textContent = isFree ? "קבלת ציון ומשוב" : "בדיקת שלבים";
 
   lessonQuickItems.forEach((item, index) => {
     item.textContent = lesson.quickItems[index] || "";
   });
 
+  for (const field of Object.values(stepFieldRefs)) {
+    field.input.closest(".field").hidden = isFree;
+  }
+
   for (const [stepKey, config] of Object.entries(lesson.steps)) {
+    if (isFree) break;
     const field = stepFieldRefs[stepKey];
 
     field.label.textContent = config.label;
@@ -1328,6 +1393,8 @@ function setLessonKey(nextLessonKey, options = {}) {
     fillSteps(buildEmptySteps(state.lessonKey));
     resetResults();
   }
+
+  resetFreeAssessment();
 
   if (shouldPersist) {
     persistDraftState();
@@ -1407,6 +1474,9 @@ function showCreationAsMainResult(creation) {
   if (Number.isInteger(creation.seed)) {
     savedImageNote.textContent += ` seed: ${creation.seed}.`;
   }
+  if (Number.isInteger(creation.promptScore)) {
+    savedImageNote.textContent += ` ציון הפרומפט: ${creation.promptScore}/100.`;
+  }
   savedImageNote.hidden = false;
   finalPromptOutput.textContent = buildCreationSummary(creation);
   resultCard.hidden = false;
@@ -1467,6 +1537,9 @@ function renderGenerationGallery() {
       : "נשמרה עכשיו";
     if (Number.isInteger(creation.seed)) {
       meta.textContent += ` | seed ${creation.seed}`;
+    }
+    if (Number.isInteger(creation.promptScore)) {
+      meta.textContent += ` | ציון ${creation.promptScore}/100`;
     }
     preview.src = getCreationPreviewUrl(creation);
     preview.alt = `תצוגה מקדימה של ${lessonLabel} ${creation.generationIndex || ""}`;
@@ -1873,7 +1946,7 @@ async function restoreSavedSession() {
 function scheduleSilentDraftSave() {
   persistDraftState();
 
-  if (!state.sessionId) {
+  if (!state.sessionId || state.lessonKey === "free-lab") {
     return;
   }
 
@@ -1946,9 +2019,52 @@ validateButton.addEventListener("click", async () => {
   }
 
   resetResults();
-  setButtonState(validateButton, true, "בדיקת שלבים", "בודק...");
+  const isFree = state.lessonKey === "free-lab";
+  const idleLabel = isFree ? "קבלת ציון ומשוב" : "בדיקת שלבים";
+  setButtonState(validateButton, true, idleLabel, "בודק...");
 
   try {
+    if (isFree) {
+      resetFreeAssessment();
+      const prompt = freePromptInput.value.trim();
+      if (!prompt) {
+        showStatus("warn", "צריך לכתוב פרומפט", "כתבו איזה תמונה תרצו ליצור.");
+        return;
+      }
+
+      const response = await evaluateFreePromptCallable({
+        sessionId: state.sessionId,
+        steps: { prompt }
+      });
+      const payload = response.data;
+      persistDraftState();
+
+      if (!payload.isSafe) {
+        showStatus("bad", "הרעיון לא מתאים לפעילות", payload.message);
+        return;
+      }
+
+      if (freePromptInput.value.trim() !== prompt) {
+        showStatus("warn", "הפרומפט השתנה", "בדקו שוב את הגרסה החדשה כדי לקבל ציון עדכני.");
+        return;
+      }
+
+      state.freePromptAssessment = { prompt, requiresConfirmation: payload.requiresConfirmation };
+      freePromptScore.textContent = `ציון הפרומפט: ${payload.score}/100`;
+      freePromptTip.textContent = payload.feedback;
+      lowScoreConfirmLabel.hidden = !payload.requiresConfirmation;
+      freePromptFeedback.hidden = false;
+      updateFreeGenerateAvailability();
+      showStatus(
+        payload.requiresConfirmation ? "warn" : "good",
+        payload.requiresConfirmation ? "אפשר לשפר או להמשיך" : "הפרומפט מוכן",
+        payload.requiresConfirmation
+          ? "הציון נמוך. אפשר לשפר את הפרומפט ולבדוק שוב, או לאשר שרוצים ליצור תמונה בכל זאת."
+          : "אפשר ליצור עכשיו תמונה."
+      );
+      return;
+    }
+
     const response = await validatePromptStepsCallable({
       sessionId: state.sessionId,
       steps: collectSteps(),
@@ -1971,13 +2087,18 @@ validateButton.addEventListener("click", async () => {
       error.message || "לא הצלחתי לבדוק את השלבים."
     );
   } finally {
-    setButtonState(validateButton, false, "בדיקת שלבים", "בודק...");
+    setButtonState(validateButton, false, idleLabel, "בודק...");
   }
 });
 
 generateButton.addEventListener("click", async () => {
   if (!state.sessionId) {
     showStatus("warn", "צריך להתחיל מההתחלה", "בחרו קוד כיתה, מקום ושם תלמיד.");
+    return;
+  }
+
+  if (state.lessonKey === "free-lab" && !state.freePromptAssessment) {
+    showStatus("warn", "צריך לקבל ציון קודם", "לחצו על קבלת ציון ומשוב לפני יצירת התמונה.");
     return;
   }
 
@@ -1993,7 +2114,8 @@ generateButton.addEventListener("click", async () => {
     const response = await generateImageCallable({
       sessionId: state.sessionId,
       steps: currentSteps,
-      seed: normalizeSeed(seedInput.value)
+      seed: normalizeSeed(seedInput.value),
+      confirmLowScore: state.lessonKey === "free-lab" && lowScoreConfirm.checked
     });
     const payload = response.data;
 
@@ -2018,6 +2140,7 @@ generateButton.addEventListener("click", async () => {
       finalPromptHebrew:
         payload.finalPromptHebrew || buildHebrewPromptPreview(currentSteps, state.lessonKey),
       lessonKey: state.lessonKey,
+      promptScore: Number.isInteger(payload.promptScore) ? payload.promptScore : null,
       seed: normalizeSeed(payload.seed),
       stepSnapshot: currentSteps
     };
@@ -2042,6 +2165,7 @@ generateButton.addEventListener("click", async () => {
       getLessonDefinition(state.lessonKey).generateButtonLabel,
       "יוצר..."
     );
+    updateFreeGenerateAvailability();
   }
 });
 
@@ -2109,14 +2233,21 @@ downloadImageButton.addEventListener("click", (event) => {
 
 clearButton.addEventListener("click", () => {
   fillSteps(buildEmptySteps(state.lessonKey));
+  resetFreeAssessment();
   resetResults();
   scheduleSilentDraftSave();
-  showStatus("warn", "ניקינו את השלבים", "עכשיו אפשר להתחיל שוב מאותו מקום עם רעיון חדש.");
+  showStatus("warn", "ניקינו את הפרומפט", "עכשיו אפשר להתחיל שוב מאותו מקום עם רעיון חדש.");
 });
 
 for (const input of stepInputs) {
   input.addEventListener("input", scheduleSilentDraftSave);
 }
+
+freePromptInput.addEventListener("input", () => {
+  resetFreeAssessment();
+  scheduleSilentDraftSave();
+});
+lowScoreConfirm.addEventListener("change", updateFreeGenerateAvailability);
 
 seedInput.addEventListener("input", scheduleSilentDraftSave);
 
@@ -2132,6 +2263,8 @@ for (const button of lessonChooserButtons) {
       "בחרתם שיעור",
       normalizeLessonKey(button.dataset.lessonKey) === "comic-lab"
         ? "עכשיו נבנה קומיקס עם דמויות קבועות לאורך כל הפאנלים."
+        : normalizeLessonKey(button.dataset.lessonKey) === "free-lab"
+          ? "עכשיו כותבים פרומפט חופשי, מקבלים ציון, ואז בוחרים אם ליצור תמונה."
         : "עכשיו נבנה תמונה אחת ברעיון ברור וב-5 שלבים."
     );
   });

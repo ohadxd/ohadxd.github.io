@@ -4,14 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Funlab | מעבדת פרומפטים לילדים</title>
-  <meta name="description" content="פעילות AI חינוכית בעברית לתלמידי כיתות ה-ו: בניית פרומפט לתמונה צעד אחרי צעד עם בדיקה חכמה ויצירת תמונה רק בסיום כל השלבים." />
+  <meta name="description" content="פעילות AI חינוכית בעברית לתלמידי כיתות ה-ו: בניית פרומפט לתמונה בחמישה שלבים או כתיבת פרומפט חופשי עם ציון ומשוב." />
   <meta name="keywords" content="Funlab, AI לילדים, פרומפטים לילדים, קורס AI בעברית, יצירת תמונות לילדים, הנדסת פרומפטים" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <meta property="og:locale" content="he_IL" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Funlab" />
   <meta property="og:title" content="Funlab | מעבדת פרומפטים לילדים" />
-  <meta property="og:description" content="בונים פרומפט לתמונה ב-5 שלבים קבועים ורק אז יוצרים תמונה." />
+  <meta property="og:description" content="בונים פרומפט לתמונה בחמישה שלבים או כותבים פרומפט חופשי ומקבלים משוב לפני היצירה." />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="canonical" href="/courses/prompt-engineering/" />
   <script type="application/ld+json">
@@ -28,7 +28,7 @@
     "about": "Prompt Engineering for Children"
   }
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=20260315-comic-2" />
+  <link rel="stylesheet" href="/css/style.css?v=20260929-free-prompt-1" />
 </head>
 <body>
   <div class="wrap">
@@ -43,12 +43,12 @@
         <div class="title">
           <div class="badge"><span class="dot"></span> AI חינוכי לכיתות ה-ו</div>
           <h1>מעבדת פרומפטים</h1>
-          <p class="subtitle">כאן לא מבקשים סתם תמונה. בונים רעיון טוב ב-5 שלבים, בודקים מה חסר, ורק אז יוצרים.</p>
+          <p class="subtitle">בחרו שיעור: בונים תמונה בחמישה שלבים, כותבים פרומפט חופשי או יוצרים קומיקס.</p>
         </div>
         <div class="hero-stats">
           <div class="stat">
-            <div class="k">שלבים קבועים</div>
-            <div class="v">5 צעדים</div>
+            <div class="k">מסלולי למידה</div>
+            <div class="v">3 שיעורים</div>
           </div>
           <div class="stat">
             <div class="k">שפת ההסבר</div>
@@ -56,7 +56,7 @@
           </div>
           <div class="stat">
             <div class="k">יצירת תמונה</div>
-            <div class="v">רק אחרי השלמה</div>
+            <div class="v">אחרי בדיקה</div>
           </div>
         </div>
       </div>
@@ -79,6 +79,10 @@
           <button class="lesson-mode-card is-active" type="button" data-lesson-key="image-lab">
             <strong>בונים תמונה</strong>
             <span>5 שלבים לרעיון אחד ברור.</span>
+          </button>
+          <button class="lesson-mode-card" type="button" data-lesson-key="free-lab">
+            <strong>פרומפט חופשי</strong>
+            <span>כותבים רעיון לתמונה, מקבלים ציון ומשוב, ואז יוצרים.</span>
           </button>
           <button class="lesson-mode-card" type="button" data-lesson-key="comic-lab">
             <strong>יוצרים קומיקס</strong>
@@ -107,7 +111,7 @@
           <div class="field">
             <label for="classCode">קוד כיתה</label>
             <input id="classCode" class="input" type="text" inputmode="text" autocomplete="off" placeholder="הקלידו כאן את הקוד שקיבלתם מהמורה" required />
-            <div class="field-help">הקוד חייב להתאים לשיעור שבחרתם. קוד של תמונה לא יעבוד בקומיקס, וקוד של קומיקס לא יעבוד במסלול תמונה.</div>
+            <div class="field-help">קוד שיעור התמונה מתאים גם לפרומפט החופשי. לקומיקס צריך קוד משלו.</div>
           </div>
           <div class="field">
             <label for="studentName">שם תלמיד או תלמידה</label>
@@ -144,6 +148,11 @@
         <h2><span class="icon">🧩</span> <span id="activityHeading">בונים את הפרומפט</span></h2>
         <p id="activityIntro" class="field-help">ממלאים את כל 5 השלבים ואז יוצרים תמונה.</p>
         <div class="builder-grid">
+          <div id="freePromptField" class="field field-full" hidden>
+            <label for="freePromptInput">הפרומפט שלכם</label>
+            <textarea id="freePromptInput" class="textarea" maxlength="1200" rows="6" placeholder="תארו איזו תמונה תרצו ליצור ומה חשוב שיראו בה"></textarea>
+            <div class="field-help">אפשר לכתוב בחופשיות. אל תכתבו פרטים אישיים. לפני יצירת התמונה נקבל ציון ונבדוק שהתוכן מתאים לילדים.</div>
+          </div>
           <div class="field">
             <label id="stepCharacterLabel" for="stepCharacter">1. דמות ראשית</label>
             <textarea id="stepCharacter" class="textarea" data-step-key="character" placeholder="למשל: רובוט קטן וחברותי"></textarea>
@@ -192,6 +201,15 @@
           <button id="clearButton" class="btn-ghost" type="button">ניקוי</button>
         </div>
 
+        <div id="freePromptFeedback" class="free-prompt-feedback" hidden aria-live="polite">
+          <strong id="freePromptScore"></strong>
+          <p id="freePromptTip"></p>
+          <label id="lowScoreConfirmLabel" class="low-score-confirm" hidden>
+            <input id="lowScoreConfirm" type="checkbox" />
+            אני בטוח/ה שאני רוצה ליצור תמונה מהפרומפט הזה למרות הציון הנמוך.
+          </label>
+        </div>
+
         <div id="statusBox" class="callout warn" hidden>
           <div class="row">
             <div class="badge2">i</div>
@@ -211,7 +229,7 @@
             <img id="imagePreview" alt="התמונה שנוצרה מהפרומפט" />
             <div id="resultComicOverlay" class="comic-overlay" hidden aria-hidden="true"></div>
           </div>
-          <figcaption>התמונה נוצרת רק אחרי שכל השלבים מולאו ונבדקו.</figcaption>
+          <figcaption>התמונה נוצרת אחרי בדיקת הפרומפט ואישור מתאים.</figcaption>
         </figure>
         <div class="action-row">
           <a id="downloadImageButton" class="btn-primary" href="#" download="funlab-image.png" hidden>הורדת התמונה</a>
@@ -242,6 +260,6 @@
     </footer>
   </div>
 
-  <script type="module" src="/js/prompt-lab.js?v=20260315-comic-2"></script>
+  <script type="module" src="/js/prompt-lab.js?v=20260929-free-prompt-1"></script>
 </body>
 </html>

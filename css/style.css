@@ -16,6 +16,7 @@
 }
 
 *{ box-sizing:border-box; }
+[hidden]{ display:none !important; }
 html,body{ height:100%; }
 body{
   margin:0;
@@ -1121,7 +1122,7 @@ figure,
 
 .lesson-mode-grid{
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -1167,6 +1168,27 @@ figure,
   cursor: not-allowed;
   transform: none;
 }
+
+.free-prompt-feedback{
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #a7d7ca;
+  border-radius: 16px;
+  background: #eefbf6;
+  color: #173d35;
+}
+
+.free-prompt-feedback strong{ font-size: 20px; }
+.free-prompt-feedback p{ margin: 8px 0 0; }
+.low-score-confirm{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.low-score-confirm input{ margin-top: 7px; }
 
 .status-copy{
   display: grid;

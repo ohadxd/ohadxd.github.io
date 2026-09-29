@@ -136,6 +136,10 @@ export function validatePromptStepsCallable(data) {
   return callFunction("validatePromptSteps", data);
 }
 
+export function evaluateFreePromptCallable(data) {
+  return callFunction("evaluateFreePrompt", data);
+}
+
 export function generateImageCallable(data) {
   return callFunction("generateImage", data);
 }
