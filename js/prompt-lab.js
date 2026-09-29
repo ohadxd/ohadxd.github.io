@@ -10,7 +10,7 @@ import {
   setRealtimeClientConfig,
   subscribeSeatMap,
   validatePromptStepsCallable
-} from "/js/functions-client.js?v=20260929-free-prompt-1";
+} from "/js/functions-client.js?v=20260929-free-prompt-2";
 
 const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
 const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
