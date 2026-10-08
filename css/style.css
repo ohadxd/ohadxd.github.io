@@ -1062,6 +1062,7 @@ figure,
 
 .btn-primary,
 .btn-secondary,
+.btn-danger,
 .btn-ghost{
   border: none;
   border-radius: 14px;
@@ -1089,6 +1090,11 @@ figure,
   box-shadow: 0 10px 20px rgba(249, 115, 22, 0.18);
 }
 
+.btn-danger{
+  background: #b91c1c;
+  color: #ffffff;
+}
+
 .btn-ghost{
   background: #edf6ff;
   color: var(--text);
@@ -1097,6 +1103,7 @@ figure,
 
 .btn-primary:hover,
 .btn-secondary:hover,
+.btn-danger:hover,
 .btn-ghost:hover{
   transform: translateY(-1px);
   filter: brightness(1.03);
@@ -1104,6 +1111,7 @@ figure,
 
 .btn-primary:disabled,
 .btn-secondary:disabled,
+.btn-danger:disabled,
 .btn-ghost:disabled{
   opacity: 0.6;
   cursor: not-allowed;
@@ -1628,6 +1636,12 @@ figure,
 }
 
 .admin-class-stats{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-class-actions{
   display: flex;
   gap: 8px;
   flex-wrap: wrap;

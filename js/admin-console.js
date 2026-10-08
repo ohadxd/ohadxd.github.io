@@ -1,4 +1,5 @@
 import {
+  adminDeleteClassCallable,
   adminGetPromptLabSettingsCallable,
   adminGetSpendReportCallable,
   adminListClassesCallable,
@@ -7,7 +8,7 @@ import {
   adminSavePromptLabSettingsCallable,
   adminSetClassActiveCallable,
   adminUpsertClassCallable
-} from "/js/functions-client.js?v=20260314-admin-2";
+} from "/js/functions-client.js?v=20261008-class-delete-1";
 
 const STORAGE_KEY = "funlab-admin-session";
 
@@ -170,12 +171,15 @@ function buildClassCard(item) {
   const meta = document.createElement("div");
   const stats = document.createElement("div");
   const toggleButton = document.createElement("button");
+  const deleteButton = document.createElement("button");
+  const actions = document.createElement("div");
 
   article.className = "admin-class-card";
   head.className = "gallery-card-head";
   title.className = "gallery-card-title";
   meta.className = "gallery-card-meta";
   stats.className = "admin-class-stats";
+  actions.className = "admin-class-actions";
 
   title.textContent = item.code;
   meta.textContent = item.label || "ללא תיאור";
@@ -191,6 +195,7 @@ function buildClassCard(item) {
   toggleButton.className = item.isActive ? "btn-secondary" : "btn-primary";
   toggleButton.textContent = item.isActive ? "סגירת כיתה" : "פתיחת כיתה";
   toggleButton.addEventListener("click", async () => {
+    deleteButton.disabled = true;
     setBusy(toggleButton, true, toggleButton.textContent, "שומר...");
 
     try {
@@ -212,8 +217,35 @@ function buildClassCard(item) {
     }
   });
 
+  deleteButton.type = "button";
+  deleteButton.className = "btn-danger";
+  deleteButton.textContent = "מחיקת כיתה";
+  deleteButton.setAttribute("aria-label", `מחיקת כיתה ${item.code}`);
+  deleteButton.addEventListener("click", async () => {
+    const classLabel = item.label ? `${item.code} (${item.label})` : item.code;
+    if (!window.confirm(`למחוק את הכיתה ${classLabel}?\nקוד הכיתה יפסיק לעבוד והכיתה תוסר מהרשימה. לא ניתן לבטל את המחיקה.\nהתמונות והיסטוריית היצירות יישמרו.`)) {
+      return;
+    }
+
+    toggleButton.disabled = true;
+    setBusy(deleteButton, true, "מחיקת כיתה", "מוחק...");
+    try {
+      const response = await adminDeleteClassCallable({
+        sessionToken: state.sessionToken,
+        classCode: item.code
+      });
+      state.items = state.items.filter((classItem) => classItem.code !== response.data.classCode);
+      showStatus("good", "הכיתה נמחקה", `הכיתה ${item.code} נמחקה בהצלחה.`);
+    } catch (error) {
+      showStatus("bad", "המחיקה נכשלה", error.message || "נסו שוב בעוד רגע.");
+    } finally {
+      renderClassGrid();
+    }
+  });
+
   head.append(title, meta);
-  article.append(head, stats, toggleButton);
+  actions.append(toggleButton, deleteButton);
+  article.append(head, stats, actions);
   return article;
 }
 

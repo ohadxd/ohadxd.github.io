@@ -164,6 +164,10 @@ export function adminSetClassActiveCallable(data) {
   return callFunction("adminSetClassActive", data);
 }
 
+export function adminDeleteClassCallable(data) {
+  return callFunction("adminDeleteClass", data);
+}
+
 export function adminGetPromptLabSettingsCallable(data) {
   return callFunction("adminGetPromptLabSettings", data);
 }

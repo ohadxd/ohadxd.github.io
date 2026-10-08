@@ -9,6 +9,7 @@ const logger = require("firebase-functions/logger");
 const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https");
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { buildApiErrorDetails, fetchOpenAiJson } = require("./lib/apiErrors");
+const { deleteClassRecords } = require("./lib/classManagement");
 const {
   ACTIVITY_CONFIG,
   DEFAULT_LESSON_KEY
@@ -1255,13 +1256,10 @@ exports.adminSetClassActive = onCall(getCallableOptions(), async (request) => {
     throw new HttpsError("not-found", "קוד הכיתה לא נמצא.");
   }
 
-  await classRef.set(
-    {
-      isActive: request.data?.isActive !== false,
-      updatedAt: FieldValue.serverTimestamp()
-    },
-    { merge: true }
-  );
+  await classRef.update({
+    isActive: request.data?.isActive !== false,
+    updatedAt: FieldValue.serverTimestamp()
+  });
 
   const updatedSnapshot = await classRef.get();
 
@@ -1269,6 +1267,22 @@ exports.adminSetClassActive = onCall(getCallableOptions(), async (request) => {
     ok: true,
     item: serializeClassAccessCode(updatedSnapshot)
   };
+});
+
+exports.adminDeleteClass = onCall(getCallableOptions(), async (request) => {
+  await requireAdminSession(request.data?.sessionToken);
+  const classCode = normalizeClassCode(request.data?.classCode);
+
+  if (!classCode) {
+    throw new HttpsError("invalid-argument", "יש להזין קוד כיתה תקין.");
+  }
+
+  const deleted = await deleteClassRecords(db, classCode, buildPublicSeatMapId(classCode));
+  if (!deleted) {
+    throw new HttpsError("not-found", "קוד הכיתה לא נמצא.");
+  }
+
+  return { ok: true, classCode };
 });
 
 exports.adminGetPromptLabSettings = onCall(
@@ -1440,6 +1454,10 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
   };
 
   await db.runTransaction(async (transaction) => {
+    const currentClass = await transaction.get(classRef);
+    if (!currentClass.exists || currentClass.data()?.isActive === false) {
+      throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.invalidClassCode);
+    }
     const seatSnapshot = await transaction.get(seatRef);
     const seatData = seatSnapshot.exists ? seatSnapshot.data() : null;
     const activeSeatSessionId = getActiveSeatSessionId(seatData, now);
@@ -1459,15 +1477,14 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
       }),
       { merge: true }
     );
-    transaction.set(
+    transaction.update(
       classRef,
       {
         activitySlug: ACTIVITY_CONFIG.activitySlug,
         lastJoinedAt: FieldValue.serverTimestamp(),
         participantsCount: FieldValue.increment(1),
         totalSessions: FieldValue.increment(1)
-      },
-      { merge: true }
+      }
     );
   });
 
@@ -1934,13 +1951,10 @@ exports.generateImage = onCall(
       sessionData.studentName || "תלמיד/ה"
     );
 
-    await classRef.set(
-      {
-        lastGeneratedAt: FieldValue.serverTimestamp(),
-        totalGenerations: FieldValue.increment(1)
-      },
-      { merge: true }
-    );
+    await classRef.update({
+      lastGeneratedAt: FieldValue.serverTimestamp(),
+      totalGenerations: FieldValue.increment(1)
+    });
 
     await usageRef.set({
       classCode: normalizedCode,
