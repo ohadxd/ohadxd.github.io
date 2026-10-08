@@ -8,6 +8,7 @@ const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https");
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
+const { buildApiErrorDetails, fetchOpenAiJson } = require("./lib/apiErrors");
 const {
   ACTIVITY_CONFIG,
   DEFAULT_LESSON_KEY
@@ -579,7 +580,9 @@ async function generateImageWithGemini(ai, finalPromptText, seed, promptConfig) 
     }
   }
 
-  throw new Error("Gemini image generation did not return image data.");
+  throw Object.assign(new Error("Gemini image generation did not return image data."), {
+    apiResponse: response
+  });
 }
 
 async function generateImageWithImagen(ai, finalPromptText, seed, promptConfig) {
@@ -606,33 +609,15 @@ async function generateImageWithImagen(ai, finalPromptText, seed, promptConfig) 
   const imageBase64 = String(firstImage?.imageBytes || "").trim();
 
   if (!imageBase64) {
-    throw new Error("Imagen generation did not return image data.");
+    throw Object.assign(new Error("Imagen generation did not return image data."), {
+      apiResponse: response
+    });
   }
 
   return {
     imageBase64,
     mimeType: String(firstImage?.mimeType || "image/png").trim() || "image/png"
   };
-}
-
-async function fetchOpenAiJson(url, apiKey, options = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    }
-  });
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(
-      String(payload?.error?.message || `OpenAI request failed with status ${response.status}.`)
-    );
-  }
-
-  return payload;
 }
 
 async function generateImageWithOpenAi(apiKey, finalPromptText, promptConfig) {
@@ -648,7 +633,9 @@ async function generateImageWithOpenAi(apiKey, finalPromptText, promptConfig) {
   const imageBase64 = String(payload?.data?.[0]?.b64_json || "").trim();
 
   if (!imageBase64) {
-    throw new Error("OpenAI image generation did not return image data.");
+    throw Object.assign(new Error("OpenAI image generation did not return image data."), {
+      apiResponse: payload
+    });
   }
 
   return {
@@ -1688,7 +1675,11 @@ exports.evaluateFreePrompt = onCall(
         assessment = await assessFreePrompt(new GoogleGenAI({ apiKey }), steps.prompt);
       } catch (error) {
         logger.error("Failed to assess free prompt", error);
-        throw new HttpsError("unavailable", "לא הצלחנו לבדוק את הפרומפט כרגע. נסו שוב בעוד רגע.");
+        throw new HttpsError(
+          "unavailable",
+          "לא הצלחנו לבדוק את הפרומפט כרגע. נסו שוב בעוד רגע.",
+          buildApiErrorDetails(error, { provider: "gemini", stage: "prompt-assessment" })
+        );
       }
     }
 
@@ -1814,6 +1805,8 @@ exports.generateImage = onCall(
     let provider = providerSelection.provider;
     let model = providerSelection.imageModel;
     let effectiveSeed = providerSelection.supportsSeed ? seed : null;
+    let errorProvider = "gemini";
+    let errorStage = "prompt-preparation";
 
     try {
       const geminiApiKey = normalizeSecretValue(GEMINI_API_KEY.value());
@@ -1857,6 +1850,8 @@ exports.generateImage = onCall(
         panelNumber: generationsCount + 1
       });
 
+      errorProvider = providerSelection.provider;
+      errorStage = "image-generation";
       if (providerSelection.provider === "openai") {
         const openAiApiKey = normalizeSecretValue(OPENAI_API_KEY.value());
 
@@ -1876,7 +1871,12 @@ exports.generateImage = onCall(
       logger.error("Failed to generate an image from validated prompt steps", error);
       throw new HttpsError(
         "internal",
-        "לא הצלחתי להכין פרומפט תקין לתמונה. נסו שוב בעוד רגע."
+        "לא הצלחתי להכין פרומפט תקין לתמונה. נסו שוב בעוד רגע.",
+        buildApiErrorDetails(error, {
+          provider: errorProvider,
+          stage: errorStage,
+          ...(errorStage === "image-generation" ? { model } : {})
+        })
       );
     }
 
