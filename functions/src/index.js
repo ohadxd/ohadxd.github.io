@@ -564,10 +564,49 @@ async function generateImageWithGemini(ai, finalPromptText, seed, promptConfig) 
     config.seed = seed;
   }
 
-  const response = await ai.models.generateContent({
+  const generationId = randomUUID();
+  const startedAt = Date.now();
+  logger.info("Gemini image generation request", {
+    generationId,
     model: promptConfig.imageModel,
-    contents: finalPromptText,
+    prompt: finalPromptText,
     config
+  });
+
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: promptConfig.imageModel,
+      contents: finalPromptText,
+      config
+    });
+  } catch (error) {
+    logger.error("Gemini image generation API error", {
+      generationId,
+      durationMs: Date.now() - startedAt,
+      ...buildApiErrorDetails(error, { provider: "gemini", model: promptConfig.imageModel })
+    });
+    throw error;
+  }
+
+  logger.info("Gemini image generation result", {
+    generationId,
+    durationMs: Date.now() - startedAt,
+    modelVersion: response.modelVersion || null,
+    responseId: response.responseId || null,
+    promptFeedback: response.promptFeedback || null,
+    usageMetadata: response.usageMetadata || null,
+    candidates: (response.candidates || []).map((candidate) => ({
+      index: candidate.index,
+      finishReason: candidate.finishReason || null,
+      finishMessage: candidate.finishMessage || null,
+      safetyRatings: candidate.safetyRatings || null,
+      parts: (candidate.content?.parts || []).map((part) => ({
+        text: part.text || null,
+        hasImageData: Boolean(part.inlineData?.data),
+        mimeType: part.inlineData?.mimeType || null
+      }))
+    }))
   });
 
   for (const candidate of response.candidates || []) {
