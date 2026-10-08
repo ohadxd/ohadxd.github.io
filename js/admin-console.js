@@ -7,8 +7,10 @@ import {
   adminLogoutCallable,
   adminSavePromptLabSettingsCallable,
   adminSetClassActiveCallable,
+  adminSetClassScheduleCallable,
   adminUpsertClassCallable
-} from "/js/functions-client.js?v=20261008-class-delete-1";
+} from "/js/functions-client.js?v=20261008-class-schedule-1";
+import { readScheduleInputs, setupScheduleInputs } from "/js/class-schedule.js?v=20261008-class-schedule-1";
 
 const STORAGE_KEY = "funlab-admin-session";
 
@@ -37,6 +39,16 @@ const newClassLabelInput = document.getElementById("newClassLabel");
 const newClassLessonSelect = document.getElementById("newClassLesson");
 const newClassSeatsInput = document.getElementById("newClassSeats");
 const newClassLimitInput = document.getElementById("newClassLimit");
+const newClassOpensInput = document.getElementById("newClassOpens");
+const newClassClosesInput = document.getElementById("newClassCloses");
+const resetNewClassSchedule = setupScheduleInputs(newClassOpensInput, newClassClosesInput);
+let defaultNewClassOpening = newClassOpensInput.value;
+let defaultNewClassClosing = newClassClosesInput.value;
+function resetCreateClassSchedule() {
+  resetNewClassSchedule();
+  defaultNewClassOpening = newClassOpensInput.value;
+  defaultNewClassClosing = newClassClosesInput.value;
+}
 const promptLabSettingsForm = document.getElementById("promptLabSettingsForm");
 const savePromptLabSettingsButton = document.getElementById("savePromptLabSettingsButton");
 const activeProviderSelect = document.getElementById("activeProviderSelect");
@@ -173,6 +185,15 @@ function buildClassCard(item) {
   const toggleButton = document.createElement("button");
   const deleteButton = document.createElement("button");
   const actions = document.createElement("div");
+  const scheduleForm = document.createElement("form");
+  const opensInput = document.createElement("input");
+  const closesInput = document.createElement("input");
+  const scheduleSaveButton = document.createElement("button");
+  function setClassBusy(isBusy) {
+    for (const control of [toggleButton, deleteButton, scheduleSaveButton, opensInput, closesInput]) {
+      control.disabled = isBusy;
+    }
+  }
 
   article.className = "admin-class-card";
   head.className = "gallery-card-head";
@@ -183,8 +204,12 @@ function buildClassCard(item) {
 
   title.textContent = item.code;
   meta.textContent = item.label || "ללא תיאור";
+  const now = Date.now();
+  const accessLabel = !item.isActive ? "סגורה ידנית"
+    : item.opensAtMs && now < item.opensAtMs ? "טרם נפתחה"
+    : item.closesAtMs && now >= item.closesAtMs ? "חלון הזמן הסתיים" : "פתוחה";
   stats.innerHTML = [
-    `<span class="pill">${item.isActive ? "פתוחה" : "סגורה"}</span>`,
+    `<span class="pill">${accessLabel}</span>`,
     `<span class="pill">${item.lessonTitle || item.lessonKey || "שיעור"}</span>`,
     `<span class="pill">${item.seatCount} מקומות</span>`,
     `<span class="pill">${item.allowedGenerationsPerStudent} יצירות</span>`,
@@ -195,7 +220,7 @@ function buildClassCard(item) {
   toggleButton.className = item.isActive ? "btn-secondary" : "btn-primary";
   toggleButton.textContent = item.isActive ? "סגירת כיתה" : "פתיחת כיתה";
   toggleButton.addEventListener("click", async () => {
-    deleteButton.disabled = true;
+    setClassBusy(true);
     setBusy(toggleButton, true, toggleButton.textContent, "שומר...");
 
     try {
@@ -227,7 +252,7 @@ function buildClassCard(item) {
       return;
     }
 
-    toggleButton.disabled = true;
+    setClassBusy(true);
     setBusy(deleteButton, true, "מחיקת כיתה", "מוחק...");
     try {
       const response = await adminDeleteClassCallable({
@@ -243,9 +268,56 @@ function buildClassCard(item) {
     }
   });
 
+  scheduleForm.className = "admin-class-schedule";
+  for (const [input, suffix, labelText] of [
+    [opensInput, "opens", "פתיחה (שעון ישראל)"],
+    [closesInput, "closes", "סגירה (שעון ישראל)"]
+  ]) {
+    const field = document.createElement("div");
+    field.className = "field";
+    const label = document.createElement("label");
+    input.id = `class-${item.code}-${suffix}`;
+    input.type = "datetime-local";
+    input.className = "input";
+    input.required = true;
+    label.htmlFor = input.id;
+    label.textContent = labelText;
+    field.append(label, input);
+    scheduleForm.appendChild(field);
+  }
+  setupScheduleInputs(opensInput, closesInput, item.opensAtMs || Date.now(), item.closesAtMs || null);
+  const scheduleNote = document.createElement("div");
+  scheduleNote.className = "field-help";
+  scheduleNote.textContent = item.opensAtMs || item.closesAtMs
+    ? "הכניסה מתאפשרת רק בחלון הזמן וכשהכיתה פתוחה ידנית."
+    : "טרם הוגדר חלון זמן. שמרו תזמון כדי להגביל כניסה; ברירת המחדל היא 45 דקות.";
+  scheduleSaveButton.type = "submit";
+  scheduleSaveButton.className = "btn-ghost btn-small";
+  scheduleSaveButton.textContent = "שמירת תזמון";
+  scheduleForm.append(scheduleNote, scheduleSaveButton);
+  scheduleForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    try {
+      const window = readScheduleInputs(opensInput, closesInput);
+      setClassBusy(true);
+      setBusy(scheduleSaveButton, true, "שמירת תזמון", "שומר...");
+      const response = await adminSetClassScheduleCallable({
+        sessionToken: state.sessionToken, classCode: item.code, ...window
+      });
+      replaceClassItem(response.data.item);
+      renderClassGrid();
+      showStatus("good", "התזמון נשמר", `זמני הפעילות של ${item.code} עודכנו.`);
+    } catch (error) {
+      showStatus("bad", "התזמון לא נשמר", error.message || "בדקו את הזמנים ונסו שוב.");
+    } finally {
+      setClassBusy(false);
+      setBusy(scheduleSaveButton, false, "שמירת תזמון", "שומר...");
+    }
+  });
+
   head.append(title, meta);
   actions.append(toggleButton, deleteButton);
-  article.append(head, stats, actions);
+  article.append(head, stats, actions, scheduleForm);
   return article;
 }
 
@@ -540,6 +612,9 @@ createClassForm.addEventListener("submit", async (event) => {
 
   try {
     const lessonKey = newClassLessonSelect.value || "image-lab";
+    if (newClassOpensInput.value === defaultNewClassOpening && newClassClosesInput.value === defaultNewClassClosing) {
+      resetCreateClassSchedule();
+    }
     const response = await adminUpsertClassCallable({
       sessionToken: state.sessionToken,
       classCode: newClassCodeInput.value,
@@ -547,6 +622,7 @@ createClassForm.addEventListener("submit", async (event) => {
       lessonKey,
       seatCount: Number(newClassSeatsInput.value),
       allowedGenerationsPerStudent: Number(newClassLimitInput.value),
+      ...readScheduleInputs(newClassOpensInput, newClassClosesInput),
       isActive: true
     });
     replaceClassItem(response.data.item);
@@ -555,6 +631,7 @@ createClassForm.addEventListener("submit", async (event) => {
     newClassLessonSelect.value = "image-lab";
     newClassSeatsInput.value = "25";
     newClassLimitInput.value = "6";
+    resetCreateClassSchedule();
     showStatus(
       "good",
       "נוצר קוד כיתה",

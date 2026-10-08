@@ -1647,6 +1647,17 @@ figure,
   flex-wrap: wrap;
 }
 
+.admin-class-schedule{
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #d8e8f8;
+  padding-top: 12px;
+}
+
+.admin-class-schedule .input{
+  min-width: 0;
+}
+
 .admin-pill-row{
   display: flex;
   gap: 8px;

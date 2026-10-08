@@ -168,6 +168,10 @@ export function adminDeleteClassCallable(data) {
   return callFunction("adminDeleteClass", data);
 }
 
+export function adminSetClassScheduleCallable(data) {
+  return callFunction("adminSetClassSchedule", data);
+}
+
 export function adminGetPromptLabSettingsCallable(data) {
   return callFunction("adminGetPromptLabSettings", data);
 }

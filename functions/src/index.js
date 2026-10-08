@@ -10,6 +10,7 @@ const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https")
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { buildApiErrorDetails, fetchOpenAiJson } = require("./lib/apiErrors");
 const { deleteClassRecords } = require("./lib/classManagement");
+const { getClassWindow, sanitizeClassWindow, assertClassWindowOpen } = require("./lib/classSchedule");
 const {
   ACTIVITY_CONFIG,
   DEFAULT_LESSON_KEY
@@ -255,6 +256,7 @@ function serializeClassAccessCode(classDoc) {
     totalGenerations: Number(data.totalGenerations || 0),
     totalSessions: Number(data.totalSessions || 0),
     participantsCount: Number(data.participantsCount || 0),
+    ...getClassWindow(data),
     expiresAtMs: data.expiresAt instanceof Timestamp ? data.expiresAt.toMillis() : 0
   };
 }
@@ -310,7 +312,6 @@ async function loadClassAccessCode(classCode, lessonKey = DEFAULT_LESSON_KEY) {
   }
 
   const classData = classSnapshot.data();
-  const expiresAt = classData.expiresAt instanceof Timestamp ? classData.expiresAt.toDate() : null;
 
   if (classData.isActive === false) {
     throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.invalidClassCode);
@@ -327,9 +328,7 @@ async function loadClassAccessCode(classCode, lessonKey = DEFAULT_LESSON_KEY) {
     throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.invalidLessonCode);
   }
 
-  if (expiresAt && expiresAt.getTime() <= Date.now()) {
-    throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.expiredClassCode);
-  }
+  assertClassWindowOpen(classData);
 
   return {
     classRef,
@@ -1252,6 +1251,9 @@ exports.adminUpsertClass = onCall(getCallableOptions(), async (request) => {
   await requireAdminSession(request.data?.sessionToken);
   const payload = sanitizeClassAdminPayload(request.data);
   const classRef = db.collection("classAccessCodes").doc(payload.classCode);
+  const existingClass = await classRef.get();
+  const hasSchedule = request.data?.opensAtMs !== undefined || request.data?.closesAtMs !== undefined;
+  const window = !existingClass.exists || hasSchedule ? sanitizeClassWindow(request.data || {}) : null;
 
   await classRef.set(
     {
@@ -1267,6 +1269,10 @@ exports.adminUpsertClass = onCall(getCallableOptions(), async (request) => {
       seatCount: payload.seatCount,
       comicSeatCount:
         payload.lessonKey === "comic-lab" ? payload.seatCount : ACTIVITY_CONFIG.comicSeatCount,
+      ...(window ? {
+        opensAt: Timestamp.fromMillis(window.opensAtMs),
+        closesAt: Timestamp.fromMillis(window.closesAtMs)
+      } : {}),
       updatedAt: FieldValue.serverTimestamp()
     },
     { merge: true }
@@ -1306,6 +1312,21 @@ exports.adminSetClassActive = onCall(getCallableOptions(), async (request) => {
     ok: true,
     item: serializeClassAccessCode(updatedSnapshot)
   };
+});
+
+exports.adminSetClassSchedule = onCall(getCallableOptions(), async (request) => {
+  await requireAdminSession(request.data?.sessionToken);
+  const classCode = normalizeClassCode(request.data?.classCode);
+  if (!classCode) throw new HttpsError("invalid-argument", "יש להזין קוד כיתה תקין.");
+  const window = sanitizeClassWindow(request.data || {});
+  const classRef = db.collection("classAccessCodes").doc(classCode);
+  if (!(await classRef.get()).exists) throw new HttpsError("not-found", "קוד הכיתה לא נמצא.");
+  await classRef.update({
+    opensAt: Timestamp.fromMillis(window.opensAtMs),
+    closesAt: Timestamp.fromMillis(window.closesAtMs),
+    updatedAt: FieldValue.serverTimestamp()
+  });
+  return { ok: true, item: serializeClassAccessCode(await classRef.get()) };
 });
 
 exports.adminDeleteClass = onCall(getCallableOptions(), async (request) => {
@@ -1497,6 +1518,7 @@ exports.joinActivity = onCall(getCallableOptions(), async (request) => {
     if (!currentClass.exists || currentClass.data()?.isActive === false) {
       throw new HttpsError("failed-precondition", ACTIVITY_CONFIG.invalidClassCode);
     }
+    assertClassWindowOpen(currentClass.data());
     const seatSnapshot = await transaction.get(seatRef);
     const seatData = seatSnapshot.exists ? seatSnapshot.data() : null;
     const activeSeatSessionId = getActiveSeatSessionId(seatData, now);

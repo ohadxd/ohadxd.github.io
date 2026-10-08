@@ -7,7 +7,9 @@ const { resolve } = require("node:path");
 const vm = require("node:vm");
 
 const script = readFileSync(resolve(__dirname, "../../js/admin-console.js"), "utf8")
-  .replace(/^import\s*\{[\s\S]*?\}\s*from\s*"[^"]+";/, "");
+  .replace(/^import\s*\{[\s\S]*?\}\s*from\s*"[^"]+";\s*/gm, "");
+const scheduleScript = readFileSync(resolve(__dirname, "../../js/class-schedule.js"), "utf8")
+  .replace(/^export /gm, "");
 
 function element() {
   return {
@@ -19,7 +21,7 @@ function element() {
   };
 }
 
-function loadUi(confirm, deleteClass) {
+function loadUi(confirm, deleteClass, setSchedule = () => assert.fail("Unexpected schedule save")) {
   const elements = new Map();
   const context = vm.createContext({
     document: {
@@ -30,9 +32,10 @@ function loadUi(confirm, deleteClass) {
       }
     },
     window: { confirm, localStorage: { getItem: () => null } },
-    adminDeleteClassCallable: deleteClass
+    adminDeleteClassCallable: deleteClass,
+    adminSetClassScheduleCallable: setSchedule
   });
-  vm.runInContext(`${script}\nglobalThis.testUi = { state, buildClassCard };`, context);
+  vm.runInContext(`${scheduleScript}\n${script}\nglobalThis.testUi = { state, buildClassCard };`, context);
   const { state, buildClassCard } = context.testUi;
   state.sessionToken = "test-session";
   state.items = [
@@ -41,7 +44,13 @@ function loadUi(confirm, deleteClass) {
   ];
   const card = buildClassCard(state.items[0]);
   const [toggleButton, deleteButton] = card.children[2].children;
-  return { state, elements, toggleButton, deleteButton };
+  const scheduleForm = card.children[3];
+  return {
+    state, elements, toggleButton, deleteButton, scheduleForm,
+    opensInput: scheduleForm.children[0].children[1],
+    closesInput: scheduleForm.children[1].children[1],
+    scheduleSaveButton: scheduleForm.children[3]
+  };
 }
 
 test("canceling the class-specific confirmation sends no delete request", async () => {
@@ -84,4 +93,42 @@ test("failed deletion retains the class and displays the API error", async () =>
   assert.equal(ui.elements.get("adminStatusText").textContent, "Deletion failed");
   const replacement = ui.elements.get("adminClassGrid").children[0];
   assert.equal(replacement.children[2].children[1].disabled, false);
+});
+
+test("admin schedule save sends Israel dates as UTC timestamps and updates the class", async () => {
+  const ui = loadUi(() => false, () => {}, async (request) => {
+    assert.deepEqual(JSON.parse(JSON.stringify(request)), {
+      sessionToken: "test-session", classCode: "CLASS123",
+      opensAtMs: Date.UTC(2026, 9, 8, 10), closesAtMs: Date.UTC(2026, 9, 8, 10, 45)
+    });
+    assert.equal(ui.deleteButton.disabled, true);
+    assert.equal(ui.toggleButton.disabled, true);
+    return { data: { item: { ...ui.state.items[0], ...request } } };
+  });
+  ui.opensInput.value = "2026-10-08T13:00";
+  ui.closesInput.value = "2026-10-08T13:45";
+  await ui.scheduleForm.listeners.submit({ preventDefault() {} });
+  assert.equal(ui.state.items[0].opensAtMs, Date.UTC(2026, 9, 8, 10));
+  assert.equal(ui.elements.get("adminStatusTitle").textContent, "התזמון נשמר");
+});
+
+test("failed schedule saves keep the edited times and enable retry", async () => {
+  const ui = loadUi(() => false, () => {}, async () => { throw new Error("Save failed"); });
+  ui.opensInput.value = "2026-10-08T13:00";
+  ui.closesInput.value = "2026-10-08T13:45";
+  await ui.scheduleForm.listeners.submit({ preventDefault() {} });
+  assert.equal(ui.opensInput.value, "2026-10-08T13:00");
+  assert.equal(ui.closesInput.value, "2026-10-08T13:45");
+  assert.equal(ui.scheduleSaveButton.disabled, false);
+  assert.equal(ui.elements.get("adminStatusText").textContent, "Save failed");
+  assert.equal(ui.state.items[0].opensAtMs, undefined);
+});
+
+test("invalid schedule times never reach the API", async () => {
+  const ui = loadUi(() => false, () => {});
+  ui.opensInput.value = "2026-10-08T13:00";
+  ui.closesInput.value = "2026-10-08T12:00";
+  await ui.scheduleForm.listeners.submit({ preventDefault() {} });
+  assert.equal(ui.elements.get("adminStatusTitle").textContent, "התזמון לא נשמר");
+  assert.equal(ui.scheduleSaveButton.disabled, false);
 });

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Funlab | ניהול כיתות</title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="stylesheet" href="/css/style.css?v=20261008-class-delete-1" />
+  <link rel="stylesheet" href="/css/style.css?v=20261008-class-schedule-1" />
 </head>
 <body>
   <div class="wrap">
@@ -77,6 +77,15 @@
           <div class="field">
             <label for="newClassLimit">יצירות לכל תלמיד</label>
             <input id="newClassLimit" class="input" type="number" min="1" max="20" value="6" />
+          </div>
+          <div class="field">
+            <label for="newClassOpens">שעת פתיחה (שעון ישראל)</label>
+            <input id="newClassOpens" class="input" type="datetime-local" required />
+          </div>
+          <div class="field">
+            <label for="newClassCloses">שעת סגירה (שעון ישראל)</label>
+            <input id="newClassCloses" class="input" type="datetime-local" required />
+            <div class="field-help">ברירת המחדל היא 45 דקות. תלמידים יכולים להיכנס רק בחלון הזמן.</div>
           </div>
           <div class="action-row field-full">
             <button id="createClassButton" class="btn-secondary" type="submit">יצירת קוד כיתה</button>
@@ -221,6 +230,6 @@
     </main>
   </div>
 
-  <script type="module" src="/js/admin-console.js?v=20261008-class-delete-1"></script>
+  <script type="module" src="/js/admin-console.js?v=20261008-class-schedule-1"></script>
 </body>
 </html>
