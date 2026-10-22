@@ -15,6 +15,7 @@ function element() {
   return {
     children: [], listeners: {}, attributes: {}, disabled: false,
     append(...children) { this.children.push(...children); },
+    replaceChildren(...children) { this.children = children; },
     appendChild(child) { this.children.push(child); },
     addEventListener(type, listener) { this.listeners[type] = listener; },
     setAttribute(name, value) { this.attributes[name] = value; }
@@ -35,7 +36,7 @@ function loadUi(confirm, deleteClass, setSchedule = () => assert.fail("Unexpecte
     adminDeleteClassCallable: deleteClass,
     adminSetClassScheduleCallable: setSchedule
   });
-  vm.runInContext(`${scheduleScript}\n${script}\nglobalThis.testUi = { state, buildClassCard };`, context);
+  vm.runInContext(`${scheduleScript}\n${script}\nglobalThis.testUi = { state, buildClassCard, renderClassGrid };`, context);
   const { state, buildClassCard } = context.testUi;
   state.sessionToken = "test-session";
   state.items = [
@@ -46,7 +47,7 @@ function loadUi(confirm, deleteClass, setSchedule = () => assert.fail("Unexpecte
   const [toggleButton, deleteButton] = card.children[2].children;
   const scheduleForm = card.children[3];
   return {
-    state, elements, toggleButton, deleteButton, scheduleForm,
+    state, elements, toggleButton, deleteButton, scheduleForm, renderClassGrid: context.testUi.renderClassGrid,
     opensInput: scheduleForm.children[0].children[1],
     closesInput: scheduleForm.children[1].children[1],
     scheduleSaveButton: scheduleForm.children[3]
@@ -131,4 +132,15 @@ test("invalid schedule times never reach the API", async () => {
   await ui.scheduleForm.listeners.submit({ preventDefault() {} });
   assert.equal(ui.elements.get("adminStatusTitle").textContent, "התזמון לא נשמר");
   assert.equal(ui.scheduleSaveButton.disabled, false);
+});
+
+test("newly created and deleted classes immediately update the prompt monitor selector",()=>{
+ const ui=loadUi(()=>false,()=>{});
+ ui.state.items.push({code:"NEW123",label:"New"});
+ ui.renderClassGrid();
+ const select=ui.elements.get("activityClassSelect");
+ assert.ok(select.children.some(option=>option.value==="NEW123"));
+ ui.state.items=ui.state.items.filter(item=>item.code!=="NEW123");
+ ui.renderClassGrid();
+ assert.equal(select.children.some(option=>option.value==="NEW123"),false);
 });

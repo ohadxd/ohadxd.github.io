@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Funlab | פרומפט חופשי</title>
+  <meta name="description" content="פעילות AI חינוכית בעברית לתלמידי כיתות ה-ו: בניית פרומפט לתמונה בחמישה שלבים או כתיבת פרומפט חופשי עם ציון ומשוב." />
+  <meta name="keywords" content="Funlab, AI לילדים, פרומפטים לילדים, קורס AI בעברית, יצירת תמונות לילדים, הנדסת פרומפטים" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta property="og:locale" content="he_IL" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Funlab" />
+  <meta property="og:title" content="Funlab | מעבדת פרומפטים לילדים" />
+  <meta property="og:description" content="בונים פרומפט לתמונה בחמישה שלבים או כותבים פרומפט חופשי ומקבלים משוב לפני היצירה." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="/courses/prompt-engineering/free-lab/" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": "מעבדת פרומפטים לילדים",
+    "inLanguage": "he-IL",
+    "provider": {
+      "@type": "Organization",
+      "name": "Funlab",
+      "alternateName": ["funlab", "פאנלאב", "פנלב", "פן לב"]
+    },
+    "about": "Prompt Engineering for Children"
+  }
+  </script>
+  <link rel="stylesheet" href="/css/style.css?v=20260929-free-prompt-2" />
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/prompt-lab-design.css"></head>
+<body class="lab-site lab-activity" data-lesson-key="free-lab">
+  <div class="wrap">
+<a class="skip-link" href="#main">דילוג לתוכן</a><header class="lab-header"><nav aria-label="ניווט ראשי"><a class="lab-brand" href="/" aria-label="Funlab — בית"><img src="/assets/prompt-lab/approved-concept.png" alt="Funlab" width="1435" height="1096"></a><a href="/">בית</a><a href="/courses/" aria-current="page">קורסים</a><a class="class-link" href="#class-help">כניסה לכיתה</a></nav></header><header class="activity-heading"><div class="activity-intro-copy"><a class="return-link" href="/courses/prompt-engineering/">חזרה למעבדת הפרומפטים</a><h1>פרומפט חופשי</h1><p>כותבים רעיון, מקבלים משוב ומשפרים לפני שיוצרים.</p></div><div class="classroom-art" aria-hidden="true"><img src="/assets/prompt-lab/approved-concept.png" alt="" width="1435" height="1096"></div></header>    <main class="grid single-col" id="main">
+<p id="lessonLeadText" class="kid-note" hidden></p>      <section class="card">
+        <details class="classroom-guide"><summary>איך הפעילות עובדת?</summary>
+        <div class="quick-items classroom-steps">
+          <div id="lessonQuick1" class="quick-item">1. בוחרים דמות ראשית.</div>
+          <div id="lessonQuick2" class="quick-item">2. מוסיפים מקום או סביבה.</div>
+          <div id="lessonQuick3" class="quick-item">3. כותבים מה הדמות עושה.</div>
+          <div id="lessonQuick4" class="quick-item">4. בוחרים סגנון חזותי.</div>
+          <div id="lessonQuick5" class="quick-item">5. מוסיפים פרט מיוחד קטן ומעניין.</div>
+        </div>
+        <p id="lessonGuardrailText" class="kid-note">המערכת לא מאפשרת בקשה חופשית לתמונה. היא בודקת שיש כל השלבים ורק אז יוצרת.</p></details>
+      </section>
+
+
+      <section class="card">
+        <h2><span class="icon">🔑</span> כניסה לכיתה</h2>
+        <span id="class-help"></span><form id="joinForm" class="form-grid">
+          <div class="field">
+            <label for="classCode">קוד כיתה</label>
+            <input id="classCode" class="input" type="text" inputmode="text" autocomplete="off" placeholder="הקלידו כאן את הקוד שקיבלתם מהמורה" required />
+            <div class="field-help">קוד שיעור התמונה מתאים גם לפרומפט החופשי.</div>
+          </div>
+          <div class="field">
+            <label for="studentName">שם תלמיד או תלמידה</label>
+            <input id="studentName" class="input" type="text" autocomplete="name" placeholder="למשל: נועם" />
+            <div class="field-help">כתבו רק שם פרטי, ואז בחרו מקום אחד פנוי.</div>
+          </div>
+          <div class="field field-full">
+            <div class="seat-picker-head">
+              <label>בחרו מקום בכיתה</label>
+              <button id="refreshSeatsButton" class="btn-ghost btn-small" type="button">רענון מקומות</button>
+            </div>
+            <div class="seat-legend" aria-label="מקרא מקומות">
+              <span class="seat-legend-item"><span class="seat-dot is-free"></span>פנוי</span>
+              <span class="seat-legend-item"><span class="seat-dot is-taken"></span>תפוס</span>
+              <span class="seat-legend-item"><span class="seat-dot is-mine"></span>שלי</span>
+            </div>
+            <div class="field-help">לוח המקומות מתעדכן בזמן אמת, כך שאפשר לראות מיד מתי מקום נתפס או מתפנה.</div>
+            <div id="seatBoard" class="seat-board" aria-live="polite"></div>
+            <div class="action-row seat-status-row">
+              <span id="selectedSeatBadge" class="pill">עדיין לא בחרתם מקום</span>
+              <span id="seatStatusText" class="field-help">הקלידו קוד כיתה כדי לראות את לוח המקומות.</span>
+            </div>
+          </div>
+          <div class="action-row">
+            <button id="joinButton" class="btn-primary" type="submit" disabled>כניסה לפעילות</button>
+            <button id="leaveSeatButton" class="btn-ghost" type="button" hidden>לקום מהמקום</button>
+            <span id="sessionBadge" class="pill">עדיין לא התחברתם</span>
+            <span id="remainingBadge" class="pill">נשארו 0 יצירות</span>
+          </div>
+        </form>
+      </section>
+
+      <section id="activityCard" class="card" hidden>
+        <h2><span class="icon">🧩</span> <span id="activityHeading">בונים את הפרומפט</span></h2>
+        <p id="activityIntro" class="field-help">ממלאים את כל 5 השלבים ואז יוצרים תמונה.</p>
+        <div class="builder-grid">
+          <div id="freePromptField" class="field field-full" hidden>
+            <label for="freePromptInput">הפרומפט שלכם</label>
+            <textarea id="freePromptInput" class="textarea" maxlength="1200" rows="6" placeholder="תארו איזו תמונה תרצו ליצור ומה חשוב שיראו בה"></textarea>
+            <div class="field-help">אפשר לכתוב בחופשיות. אל תכתבו פרטים אישיים. לפני יצירת התמונה נקבל ציון ונבדוק שהתוכן מתאים לילדים.</div>
+          </div>
+          <div class="field">
+            <label id="stepCharacterLabel" for="stepCharacter">1. דמות ראשית</label>
+            <textarea id="stepCharacter" class="textarea" data-step-key="character" placeholder="למשל: רובוט קטן וחברותי"></textarea>
+            <div id="stepCharacterHelp" class="field-help">מי הדמות שמופיעה בתמונה?</div>
+            <div class="example-title">רעיונות מהירים</div>
+            <div id="stepCharacterExamples" class="example-grid" aria-label="רעיונות מהירים לדמות"></div>
+          </div>
+          <div class="field">
+            <label id="stepPlaceLabel" for="stepPlace">2. מקום / סביבה</label>
+            <textarea id="stepPlace" class="textarea" data-step-key="place" placeholder="למשל: גן משחקים עתידני"></textarea>
+            <div id="stepPlaceHelp" class="field-help">איפה הסיפור קורה?</div>
+            <div class="example-title">רעיונות מהירים</div>
+            <div id="stepPlaceExamples" class="example-grid" aria-label="רעיונות מהירים למקום"></div>
+          </div>
+          <div class="field">
+            <label id="stepActionLabel" for="stepAction">3. פעולה</label>
+            <textarea id="stepAction" class="textarea" data-step-key="action" placeholder="למשל: אוסף עפיפון שנפל"></textarea>
+            <div id="stepActionHelp" class="field-help">מה הדמות עושה ממש עכשיו?</div>
+            <div class="example-title">רעיונות מהירים</div>
+            <div id="stepActionExamples" class="example-grid" aria-label="רעיונות מהירים לפעולה"></div>
+          </div>
+          <div class="field">
+            <label id="stepStyleLabel" for="stepStyle">4. סגנון חזותי</label>
+            <textarea id="stepStyle" class="textarea" data-step-key="style" placeholder="למשל: איור ספר ילדים צבעוני"></textarea>
+            <div id="stepStyleHelp" class="field-help">איך התמונה צריכה להיראות?</div>
+            <div class="example-title">רעיונות מהירים</div>
+            <div id="stepStyleExamples" class="example-grid" aria-label="רעיונות מהירים לסגנון חזותי"></div>
+          </div>
+          <div class="field field-full">
+            <label id="stepDetailLabel" for="stepDetail">5. פרט מיוחד</label>
+            <textarea id="stepDetail" class="textarea" data-step-key="detail" placeholder="למשל: תרמיל עם כוכבים זוהרים"></textarea>
+            <div id="stepDetailHelp" class="field-help">איזה פרט קטן יעשה את התמונה מיוחדת?</div>
+            <div class="example-title">רעיונות מהירים</div>
+            <div id="stepDetailExamples" class="example-grid" aria-label="רעיונות מהירים לפרט מיוחד"></div>
+          </div>
+          <div class="field field-full">
+            <label for="seedInput">זרע קבוע לתמונה (Seed)</label>
+            <input id="seedInput" class="input" type="number" min="0" max="2147483647" inputmode="numeric" placeholder="למשל: 42" />
+            <div class="field-help">אם משתמשים באותו רעיון עם אותו seed, לפעמים מקבלים תוצאה דומה יותר. נסו לשנות רק את ה-seed ולראות מה קורה.</div>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button id="validateButton" class="btn-secondary" type="button" disabled>בדיקת שלבים</button>
+          <button id="generateButton" class="btn-primary" type="button" disabled>יצירת תמונה</button>
+          <button id="clearButton" class="btn-ghost" type="button">ניקוי</button>
+        </div>
+
+        <div id="freePromptFeedback" class="free-prompt-feedback" hidden aria-live="polite">
+          <strong id="freePromptScore"></strong>
+          <p id="freePromptTip"></p>
+          <label id="lowScoreConfirmLabel" class="low-score-confirm" hidden>
+            <input id="lowScoreConfirm" type="checkbox" />
+            אני בטוח/ה שאני רוצה ליצור תמונה מהפרומפט הזה למרות הציון הנמוך.
+          </label>
+        </div>
+
+        <div id="statusBox" class="callout warn" hidden>
+          <div class="row">
+            <div class="badge2">i</div>
+            <div class="status-copy">
+              <strong id="statusTitle">מוכנים להתחיל</strong>
+              <div id="statusText">מלאו את כל חמשת השלבים.</div>
+              <div id="missingList" class="status-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="resultCard" class="card" hidden>
+        <h2><span class="icon">🖼️</span> התוצאה</h2>
+        <figure class="result-figure">
+          <div id="resultVisualStage" class="creation-stage result-stage">
+            <img id="imagePreview" alt="התמונה שנוצרה מהפרומפט" />
+            <div id="resultComicOverlay" class="comic-overlay" hidden aria-hidden="true"></div>
+          </div>
+          <figcaption>התמונה נוצרת אחרי בדיקת הפרומפט ואישור מתאים.</figcaption>
+        </figure>
+        <div class="action-row">
+          <a id="downloadImageButton" class="btn-primary" href="#" download="funlab-image.png" hidden>הורדת התמונה</a>
+          <button id="editComicLayoutButton" class="btn-secondary" type="button" hidden>סידור בועות</button>
+          <button id="resetComicLayoutButton" class="btn-ghost" type="button" hidden>איפוס בועות</button>
+          <span id="savedImageNote" class="field-help" hidden></span>
+        </div>
+        <div class="prompt-output">
+          <strong>התיאור בעברית שנבנה מהרעיונות שלכם:</strong>
+          <pre id="finalPromptOutput"></pre>
+        </div>
+      </section>
+
+      <section id="studentGalleryCard" class="card" hidden>
+        <h2><span class="icon">🗂️</span> כל היצירות שלי</h2>
+        <p class="field-help">כאן נשמרות כל היצירות של המקום שלכם, כדי שתוכלו להשוות בין גרסאות ולראות מה השתנה.</p>
+        <div id="studentGalleryGrid" class="student-gallery-grid"></div>
+        <div id="studentGalleryEmpty" class="gallery-empty" hidden>עדיין אין כאן יצירות. כשתיצרו תמונה ראשונה, היא תופיע כאן ותישמר להשוואה.</div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="small">Funlab | פאנלאב | פנלב | פן לב</div>
+      <div class="back-links">
+        <a href="/courses/">חזרה לקורסים</a>
+        <a href="/">חזרה לבית</a>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="/js/prompt-lab.js?v=20261022-separate-lessons"></script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+
+:root{--lab-blue:#093de8;--lab-ink:#071b69;--lab-paper:#fffcf5}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}
+body.lab-site{margin:0;background:var(--lab-paper);color:var(--lab-ink);font:400 18px/1.5 'Rubik',Arial,sans-serif}
+.lab-site a{color:inherit;text-decoration:none}.lab-site a:focus-visible,.lab-site button:focus-visible{outline:3px solid #e4533e;outline-offset:5px}
+.lab-site a:hover{text-decoration:underline;text-underline-offset:5px}
+.lab-header{max-width:1435px;margin:auto}.lab-header nav{height:88px;display:flex;align-items:center;gap:44px;padding:0 50px}
+.lab-brand{position:relative;width:185px;height:62px;overflow:hidden;flex:none;display:block}
+.lab-brand img{position:absolute;max-width:none;width:735.897436%;height:auto;left:-621.538462%;top:-15.384615%}
+.lab-header nav>a:not(.lab-brand){font-weight:600;font-size:17px;padding:8px 4px}
+.lab-header nav>a[aria-current]{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:15px}
+.lab-header .class-link{margin-right:auto;border:2px solid var(--lab-blue);border-radius:24px;min-width:162px;text-align:center;color:var(--lab-blue)}
+.lab-hero{max-width:1435px;margin:auto;min-height:322px;position:relative;display:flex;align-items:center;justify-content:flex-start}
+.hero-visual{position:absolute;left:0;bottom:0;width:59.23%;aspect-ratio:850/330;overflow:hidden;pointer-events:none}
+.hero-visual img{position:absolute;max-width:none;left:0;top:-24.242424%;width:168.823529%;height:auto}
+.lab-hero-copy{position:relative;z-index:1;margin-right:35px;width:43%;padding:18px 0 38px}
+.lab-hero h1{font-size:clamp(48px,6.5vw,94px);line-height:1.03;letter-spacing:-.035em;color:#0634df;font-weight:900;margin:0 0 18px}
+.lab-hero-copy>p{font-size:clamp(20px,2.1vw,30px);font-weight:600;margin:0;white-space:nowrap}
+.lab-catalog{max-width:1435px;margin:auto;padding:22px 49px 0}.catalog-heading{margin-bottom:17px}.catalog-heading h2{font-size:44px;line-height:1.2;letter-spacing:-.025em;color:#0634df;font-weight:900;margin:0}.catalog-heading p{font-size:21px;font-weight:400;margin:0}
+.lesson-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.lesson-tile{background:#fff;border:1px solid #e1e2df;border-radius:17px;overflow:hidden;min-width:0}
+.lesson-cover{aspect-ratio:435/260;position:relative;overflow:hidden;border-radius:16px}
+.lesson-cover>img{position:absolute;max-width:none;width:329.885057%;height:auto;left:var(--crop-x);top:-200%}
+.new-badge{position:absolute;left:12px;top:12px;background:#ef624f;color:white;font-weight:700;border-radius:22px;padding:5px 18px;font-size:19px}
+.lesson-copy{padding:9px 17px 21px;text-align:center}.lesson-copy h3{font-size:27px;line-height:1.25;font-weight:800;margin:0 0 7px}.lesson-copy p{font-size:18px;line-height:1.5;min-height:54px;margin:0 0 16px}
+.lesson-cta{display:flex;justify-content:center;align-items:center;gap:18px;min-height:54px;border-radius:30px;background:#e4efff;color:#0739df!important;font-size:22px;font-weight:700}
+.coral .lesson-cta{background:#063cf0;color:#fff!important}.lesson-cta svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}
+.lesson-cta:hover{filter:brightness(.96);text-decoration:none!important}
+.class-help{display:flex;align-items:center;gap:14px;background:#f1f1ed;border-radius:20px;padding:15px 28px;margin-top:23px;min-height:79px;font-size:16px}
+.class-help svg{height:48px;width:48px;background:#e0eaff;border-radius:50%;padding:9px;fill:none;stroke:#072b8f;stroke-width:1.8;flex:none}.class-help strong{font-size:18px;color:#0739df}.class-help p{margin:0}
+.comic-entry{text-align:center;font-size:15px;margin:15px 0}.comic-entry a{text-decoration:underline;font-weight:600}
+.lab-footer{padding:20px;text-align:center;font-size:13px;color:#47577c}
+.skip-link{position:absolute;top:8px;right:8px;transform:translateY(-160%);background:white;padding:12px;z-index:100}.skip-link:focus{transform:none}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.lab-activity{--bg:#fffcf5;--text:#071b69;--muted:#4b5877;--line:#dce2ee;--accent:#093de8;--card:#fff;--card2:#eef3ff;--shadow:none}
+.lab-activity .wrap{max-width:1200px;padding-top:0}.lab-activity .lab-header nav{padding-inline:0}.activity-heading{padding:32px 0}.activity-heading h1{font-size:48px;font-weight:900;line-height:1.2;margin:14px 0;color:#0634df}.activity-heading p{margin:0}.return-link{font-size:16px;text-decoration:underline!important;text-underline-offset:4px}
+.lab-activity .card{background:white;border:1px solid #dce2ee;box-shadow:none;color:#071b69}.lab-activity .input,.lab-activity .textarea{background:#f9fbff;color:#071b69;border-color:#a5b3d1}.lab-activity .btn-primary{background:#093de8;color:white;border:1px solid #093de8}.lab-activity .btn-secondary,.lab-activity .btn-ghost{color:#143db0;background:#edf3ff;border-color:#a3b4de}.lab-activity .icon{display:none}.lab-activity .kid-note,.lab-activity .field-help{color:#4b5877}.lab-activity .quick-item,.lab-activity .pill,.lab-activity .example-chip{background:#eff4ff;color:#173c93;border-color:#b8c9ed}
+::selection{background:#ffdf63;color:#071b69}
+@media(min-width:1436px){.lab-hero{min-height:322px}.lab-hero h1{font-size:94px}}
+@media(max-width:900px){.lab-header nav{padding-inline:24px;gap:24px}.lab-brand{width:150px;height:50px}.lab-catalog{padding-inline:24px}.lab-hero-copy{margin-right:24px}.lab-hero-copy>p{white-space:normal}.lab-hero{min-height:285px}.lab-hero h1{font-size:60px}.catalog-heading h2{font-size:36px}.lesson-copy h3{font-size:23px}.lesson-copy p{font-size:16px;min-height:72px}.lesson-cta{font-size:19px}}
+@media(max-width:640px){.lab-header nav{height:78px;padding-inline:16px;gap:18px}.lab-brand{width:124px;height:42px;margin-left:auto}.lab-header nav>a:not(.lab-brand){font-size:14px}.lab-header .class-link{min-width:0;padding:7px 10px!important;margin:0}.lab-header nav>a[href="/"]{display:none}.lab-hero{display:flex;flex-direction:column;min-height:0;align-items:stretch}.lab-hero-copy{width:auto;margin:0;padding:22px 20px 8px}.lab-hero h1{font-size:54px;line-height:1.04;margin-bottom:14px}.lab-hero-copy>p{font-size:20px}.hero-visual{position:relative;width:100%;margin-top:0;aspect-ratio:850/330}.lab-catalog{padding:22px 18px 0}.catalog-heading h2{font-size:34px}.catalog-heading p{font-size:18px}.lesson-tiles{grid-template-columns:1fr;gap:22px}.lesson-copy{padding:16px 20px 22px}.lesson-copy h3{font-size:26px}.lesson-copy p{font-size:17px;min-height:0}.lesson-cta{font-size:21px}.class-help{padding:16px;align-items:start}.class-help p{font-size:15px}.activity-heading h1{font-size:38px}.lab-activity .lab-brand{margin-left:0}.lab-activity .lab-header nav{gap:16px}.lab-activity .wrap{padding-inline:18px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* Reference alignment corrections after the first desktop/mobile comparison. */
+.lab-header{position:relative;z-index:2}
+@media(min-width:641px){
+.hero-visual{top:-88px;bottom:auto;aspect-ratio:850/410}
+.hero-visual img{top:0}
+.hero-visual:after{content:"";position:absolute;top:0;left:0;width:30%;height:80px;background:var(--lab-paper)}
+.lab-hero-copy{padding-bottom:24px}
+.lab-catalog{padding-top:20px}
+.catalog-heading{margin-bottom:14px}
+.catalog-heading p{line-height:1.25}
+.lesson-copy p{max-width:34ch;margin-inline:auto}
+}
+@media(max-width:640px){
+.lab-header nav>.lab-brand[href="/"]{display:block}
+.lab-hero-copy{order:-1}
+.hero-visual{margin-top:8px}
+}
+@media(min-width:1000px){
+.lab-hero-copy{align-self:flex-start;padding:48px 0 0}
+.lab-hero h1{line-height:1;margin-bottom:9px}
+.lab-catalog{padding-top:16px}
+.lesson-copy{padding-bottom:17px}
+.lesson-copy p{max-width:300px}
+}
+@media(min-width:1000px){.lab-hero-copy{padding-top:36px}.lab-hero h1{margin-bottom:0}}
+.lab-activity .seat-button{background:#f4f7ff;color:#173c93;border-color:#acbde2;box-shadow:none}
+.lab-activity .seat-button.is-selected,.lab-activity .seat-button.is-mine{background:#e5eaff;color:#123db4;border-color:#4263d4;box-shadow:none}
+.lab-activity .seat-button.is-taken{background:#f0f1f4;color:#5f6471;border-color:#d3d7df}
+
+/* Approved display lettering: original artwork, with real accessible headings.
+   Body, navigation, forms and buttons remain live text. */
+.approved-lettering{display:block;height:auto;overflow:hidden;max-width:100%}
+.hero-lettering{width:555px;margin-right:0;margin-left:auto}
+.section-lettering{width:280px}
+.card-lettering{width:100%;margin:auto}
+.lab-hero .art-heading{line-height:1;margin-bottom:10px}
+.catalog-heading .art-heading{line-height:1;margin:0}
+.lesson-copy .art-heading{margin:0 0 7px;line-height:1}
+@media(min-width:1000px){.lab-hero-copy{padding-top:46px}}
+@media(max-width:640px){.hero-lettering{width:100%}.section-lettering{width:225px}}
+
+/* Homepage and course directory share the approved creative-lab identity. */
+.home-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.sheet-cover{aspect-ratio:3/2}
+.sheet-cover>img{width:200%;height:200%;max-width:none;left:var(--panel-x);top:var(--panel-y)}
+.home-grid .lesson-copy h3{font-size:25px}
+.home-grid .lesson-copy p{font-size:17px;min-height:78px}
+.home-grid .blue .lesson-cta{background:#063cf0;color:white!important}
+.home-site .class-help a{text-decoration:underline;font-weight:600;text-underline-offset:4px}
+@media(max-width:1100px){.home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-grid .lesson-copy p{min-height:54px}}
+@media(max-width:640px){.home-grid{grid-template-columns:1fr}.home-grid .lesson-copy h3{font-size:26px}.home-grid .lesson-copy p{min-height:0}.home-site .catalog-heading p{max-width:26ch}.home-site .class-help strong{font-size:17px}}
+/* Student classrooms: retain the friendly identity around a focused workspace. */
+.lab-activity:not(.admin-site) .activity-heading{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:30px;align-items:center;padding:32px 0}
+.activity-intro-copy{min-width:0}
+.classroom-art{width:230px;aspect-ratio:435/260;overflow:hidden;border-radius:24px;position:relative;background:#dae8ff}
+.classroom-art img{position:absolute;width:329.885057%;max-width:none;left:-218.390805%;top:-200%;height:auto}
+.classroom-steps{display:flex!important;gap:10px;flex-wrap:wrap}
+.classroom-steps .quick-item{flex:1 1 150px;min-width:0;padding:14px;border-radius:12px}
+.lab-activity .grid{gap:24px}
+.lab-activity .card{padding:26px;border-radius:20px}
+.lab-activity .card h2{font-size:25px;color:#092b86;margin-bottom:20px}
+.lab-activity .field>label{font-size:17px;font-weight:600}
+.lab-activity .input,.lab-activity .textarea{border-radius:13px;border-color:#c0ccea;padding:14px;line-height:1.6;min-width:0}
+.lab-activity .textarea{min-height:140px}
+.lab-activity .btn-primary,.lab-activity .btn-secondary,.lab-activity .btn-ghost{border-radius:12px;box-shadow:none;min-height:44px}
+.lab-activity .btn-primary:not(:disabled):hover{background:#062eb4}
+.lab-activity .seat-button{min-height:82px;border-radius:14px}
+.lab-activity .callout{box-shadow:none;border-radius:14px}
+.lab-activity .student-gallery-card,.lab-activity .gallery-card{background:#fff;border-color:#dce2ee;color:#071b69}
+.lab-activity pre{white-space:pre-wrap;overflow-wrap:anywhere;color:inherit}
+.lab-activity .prompt-output,.lab-activity .gallery-empty{background:#f6f8ff;border-color:#c8d5ef;color:#3d507d}
+/* Teachers get a quieter workspace using the same brand, not the children's hero. */
+.admin-site .wrap{max-width:1280px}
+.admin-heading{padding:30px 0 26px}
+.admin-brand{font-size:28px;font-weight:800;direction:ltr;display:inline-block;color:#073de0!important}
+.admin-brand span{color:#ed6954}
+.admin-heading h1{font-size:38px;line-height:1.2;margin:20px 0 12px;color:#082f9b}
+.admin-heading p{color:#4c5c7b;margin:0;max-width:70ch}
+.admin-heading nav{display:flex;gap:24px;padding-top:22px;flex-wrap:wrap}
+.admin-heading nav a{font-size:16px;font-weight:600;text-underline-offset:6px}
+.admin-site main.grid{display:flex;flex-direction:column}
+.admin-site #classListCard{order:1}
+.admin-site #studentActivityCard{order:2}
+.admin-site #adminControlsCard{order:3}
+.admin-site #providerSettingsCard{order:4}
+.admin-site #spendReportCard{order:5}
+.admin-site .admin-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.admin-site .admin-class-card{background:#f7f9ff;border:1px solid #d6e0f4;border-radius:16px;padding:22px;box-shadow:none}
+.admin-site .gallery-card-title{color:#0d3fc2;font-size:22px;direction:ltr;text-align:right}
+.admin-site .gallery-card-meta{color:#4b5877}
+.admin-site .admin-class-actions{display:flex;gap:10px;flex-wrap:wrap;margin-block:18px}
+.admin-site .admin-metric-card{background:#f4f7ff;border:1px solid #d6e0f4;box-shadow:none;color:#071b69}
+.admin-site .admin-metric-key{color:#4b5877}
+.admin-site .admin-table{background:white;color:#071b69}
+.admin-site .admin-table th{background:#edf3ff;color:#203f8a}
+.admin-site .table-wrap{overflow:auto}
+.admin-site .student-activity{margin-top:20px;padding:24px;border:1px solid #d6e0f4;border-radius:16px;background:#fafbff}
+.student-activity h3{font-size:22px;margin:0 0 6px}
+.student-prompt-block{margin-top:16px}
+.student-prompt-block strong{font-size:15px;color:#425780}
+.student-prompt-block pre{font:16px/1.8 'Rubik',Arial,sans-serif;background:white;border:1px solid #e1e7f2;border-radius:10px;padding:14px;white-space:pre-wrap;overflow-wrap:anywhere;unicode-bidi:plaintext;max-height:420px;overflow:auto;margin:8px 0 0}
+.student-error{margin-top:20px;border:1px solid #e3b3a5;border-radius:12px;background:#fff4ed;padding:16px}
+.student-error summary{cursor:pointer;color:#953b20;font-weight:600;line-height:1.7;overflow-wrap:anywhere}
+.api-diagnostic pre{direction:ltr;text-align:left;font:14px/1.7 ui-monospace,monospace;color:#28374d}
+.admin-site #studentActivityMessage{font-size:15px;color:#53678b}
+.admin-site .seat-picker-head{gap:16px;align-items:center;flex-wrap:wrap}
+@media(max-width:700px){
+.lab-activity:not(.admin-site) .activity-heading{grid-template-columns:minmax(0,1fr) 88px;gap:12px}
+.classroom-art{width:88px;border-radius:16px}
+.lab-activity .activity-heading h1{font-size:32px}
+.lab-activity .activity-heading p{font-size:16px}
+.lab-activity .card{padding:20px 16px}
+.lab-activity .card h2{font-size:23px}
+.classroom-steps{gap:8px}.classroom-steps .quick-item{flex-basis:100%;padding:10px 12px;font-size:15px}
+.admin-site .admin-class-grid{grid-template-columns:1fr}
+.admin-heading h1{font-size:30px}
+.admin-heading nav{gap:14px}
+.admin-site .student-activity{padding:16px}
+.admin-site .admin-class-card{padding:16px}
+.admin-site .admin-class-actions button{flex:1 1 110px}
+}
+.classroom-guide summary{cursor:pointer;font-size:22px;font-weight:700;color:#092b86}.classroom-guide[open] summary{margin-bottom:20px}.classroom-guide summary:focus-visible{outline:3px solid #ed6954;outline-offset:5px}

@@ -156,6 +156,10 @@ export function adminListClassesCallable(data) {
   return callFunction("adminListClasses", data);
 }
 
+export function adminGetClassActivityCallable(data) {
+  return callFunction("adminGetClassActivity", data);
+}
+
 export function adminUpsertClassCallable(data) {
   return callFunction("adminUpsertClass", data);
 }

@@ -1,5 +1,6 @@
 import {
   adminDeleteClassCallable,
+  adminGetClassActivityCallable,
   adminGetPromptLabSettingsCallable,
   adminGetSpendReportCallable,
   adminListClassesCallable,
@@ -9,7 +10,7 @@ import {
   adminSetClassActiveCallable,
   adminSetClassScheduleCallable,
   adminUpsertClassCallable
-} from "/js/functions-client.js?v=20261008-class-schedule-1";
+} from "/js/functions-client.js?v=20261022-student-activity";
 import { readScheduleInputs, setupScheduleInputs } from "/js/class-schedule.js?v=20261008-class-schedule-1";
 
 const STORAGE_KEY = "funlab-admin-session";
@@ -154,6 +155,7 @@ function setLoggedOutUi() {
   state.providerStatus = null;
   state.spendRows = [];
   state.spendTotals = null;
+  resetActivityMonitor();
   sessionBadge.textContent = "לא מחוברים";
   logoutButton.hidden = true;
   controlsCard.hidden = true;
@@ -168,6 +170,7 @@ function setLoggedOutUi() {
 }
 
 function setLoggedInUi() {
+  if (activityCard) activityCard.hidden = false;
   sessionBadge.textContent = `מחובר: ${state.username}`;
   logoutButton.hidden = false;
   controlsCard.hidden = false;
@@ -316,7 +319,16 @@ function buildClassCard(item) {
   });
 
   head.append(title, meta);
-  actions.append(toggleButton, deleteButton);
+  const viewPromptsButton = document.createElement("button");
+  viewPromptsButton.type = "button";
+  viewPromptsButton.className = "btn-secondary btn-small";
+  viewPromptsButton.textContent = "פרומפטים ומשוב";
+  viewPromptsButton.addEventListener("click", () => {
+    activitySelect.value = item.code;
+    void loadClassActivity();
+    activityCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  actions.append(toggleButton, deleteButton, viewPromptsButton);
   article.append(head, stats, actions, scheduleForm);
   return article;
 }
@@ -328,6 +340,7 @@ function replaceClassItem(updatedItem) {
 }
 
 function renderClassGrid() {
+  updateActivityClasses();
   classGrid.innerHTML = "";
 
   if (!state.items.length) {
@@ -716,6 +729,120 @@ async function restoreAdminSession() {
     showStatus("warn", "צריך להתחבר מחדש", error.message || "סשן הניהול כבר לא תקף.");
   }
 }
+
+
+const activityCard = document.getElementById("studentActivityCard");
+const activitySelect = document.getElementById("activityClassSelect");
+const activityList = document.getElementById("studentActivityList");
+const activityMessage = document.getElementById("studentActivityMessage");
+const activityRefresh = document.getElementById("refreshStudentActivityButton");
+let activityRequest = 0;
+
+function resetActivityMonitor() {
+  activityRequest += 1;
+  if (!activityCard) return;
+  activityCard.hidden = true;
+  activityRefresh.disabled = false;
+  activityList.replaceChildren();
+  activitySelect.replaceChildren();
+  activityMessage.textContent = "בחרו כיתה כדי להציג פרומפטים ומשוב.";
+}
+
+function updateActivityClasses() {
+  if (!activitySelect) return;
+  const selected = activitySelect.value;
+  activitySelect.replaceChildren();
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = "בחרו כיתה";
+  activitySelect.append(empty);
+  for (const item of state.items) {
+    const option = document.createElement("option");
+    option.value = item.code;
+    option.textContent = item.label ? item.code + " · " + item.label : item.code;
+    activitySelect.append(option);
+  }
+  activitySelect.value = state.items.some(item => item.code === selected) ? selected : "";
+  if (!activitySelect.value) {
+    activityRequest += 1;
+    activityList.replaceChildren();
+    activityMessage.textContent = "בחרו כיתה כדי להציג פרומפטים ומשוב.";
+  }
+}
+
+function appendActivityText(parent, label, value, className = "") {
+  const section = document.createElement("div");
+  const title = document.createElement("strong");
+  const text = document.createElement("pre");
+  section.className = "student-prompt-block " + className;
+  title.textContent = label;
+  text.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  section.append(title, text);
+  parent.append(section);
+}
+
+function renderStudentActivity(items) {
+  activityList.replaceChildren();
+  for (const item of items) {
+    const article = document.createElement("article");
+    article.className = "student-activity";
+    const heading = document.createElement("h3");
+    heading.textContent = item.studentName + " · מקום " + item.seatNumber;
+    const meta = document.createElement("p");
+    const lessons = {"image-lab":"בונים תמונה","free-lab":"פרומפט חופשי","comic-lab":"קומיקס"};
+    meta.className = "field-help";
+    meta.textContent = (lessons[item.lessonKey] || item.lessonKey) + " · " + item.generationsCount + " יצירות";
+    article.append(heading, meta);
+    const prompt = Object.entries(item.promptSteps || {}).map(([key,value]) => {
+      const labels = {prompt:"הפרומפט",character:"דמות",place:"מקום",action:"פעולה",style:"סגנון",special:"פרט מיוחד",detail:"פרט מיוחד"};
+      return (labels[key] || key) + ": " + value;
+    }).join("\n");
+    appendActivityText(article, "הפרומפט האחרון שנשלח לבדיקה או נשמר", prompt || "עדיין לא נשלח פרומפט.");
+    if (item.lastGeneratedPrompt) appendActivityText(article, "הפרומפט של היצירה האחרונה", item.lastGeneratedPrompt);
+    if (item.lastApiError) {
+      const error = item.lastApiError;
+      const details = document.createElement("details");
+      details.className = "student-error";
+      const summary = document.createElement("summary");
+      const date = item.lastApiErrorAtMs ? new Intl.DateTimeFormat("he-IL",{dateStyle:"short",timeStyle:"short",timeZone:"Asia/Jerusalem"}).format(item.lastApiErrorAtMs) : "";
+      summary.textContent = "שגיאת API אחרונה · " + (error.provider || "") + " · " + (error.httpStatus || error.code || "") + " · " + date;
+      details.append(summary);
+      appendActivityText(details, "הודעת הספק", error.message || "לא נמסרה הודעה");
+      appendActivityText(details, "הפרומפט בזמן השגיאה", item.lastApiErrorSteps || {});
+      appendActivityText(details, "פרטי API מלאים: שלב, מודל, מזהה בקשה ותשובת הספק", error, "api-diagnostic");
+      article.append(details);
+    }
+    activityList.append(article);
+  }
+}
+
+async function loadClassActivity() {
+  const requestId = ++activityRequest;
+  const token = state.sessionToken;
+  const classCode = activitySelect.value;
+  activityList.replaceChildren();
+  if (!classCode || !token) {
+    activityMessage.textContent = "בחרו כיתה כדי להציג פרומפטים ומשוב.";
+    return;
+  }
+  activityMessage.textContent = "טוען פרומפטים...";
+  activityRefresh.disabled = true;
+  try {
+    const response = await adminGetClassActivityCallable({ sessionToken: token, classCode });
+    if (requestId !== activityRequest || token !== state.sessionToken) return;
+    const items = response.data?.items || [];
+    renderStudentActivity(items);
+    activityMessage.textContent = items.length
+      ? (response.data.hasMore ? "מוצגים 100 הסשנים האחרונים. " : "") + "עודכן כעת · לחצו על רענון לעדכון נוסף."
+      : "עדיין אין פעילות בכיתה הזאת.";
+  } catch (error) {
+    if (requestId === activityRequest && token === state.sessionToken) activityMessage.textContent = error.message || "לא ניתן לטעון את הפרומפטים.";
+  } finally {
+    if (requestId === activityRequest) activityRefresh.disabled = false;
+  }
+}
+activitySelect?.addEventListener("change", () => void loadClassActivity());
+activityRefresh?.addEventListener("click", () => void loadClassActivity());
 
 setLoggedOutUi();
 showStatus("warn", "מוכנים", "התחברו כדי לפתוח או לסגור כיתות ולנהל ספקי AI.");

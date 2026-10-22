@@ -12,12 +12,13 @@ import {
   validatePromptStepsCallable
 } from "/js/functions-client.js?v=20260929-free-prompt-2";
 
-const STORAGE_SESSION_KEY = "funlab-prompt-lab-session";
-const STORAGE_DRAFT_KEY = "funlab-prompt-lab-draft";
+const PAGE_LESSON_KEY = document.body.dataset.lessonKey || "";
+const STORAGE_SESSION_KEY = `funlab-prompt-lab-session${PAGE_LESSON_KEY ? `:${PAGE_LESSON_KEY}` : ""}`;
+const STORAGE_DRAFT_KEY = `funlab-prompt-lab-draft${PAGE_LESSON_KEY ? `:${PAGE_LESSON_KEY}` : ""}`;
 const STORAGE_COMIC_LAYOUT_KEY = "funlab-prompt-lab-comic-layouts";
 const AUTOSAVE_DELAY_MS = 1400;
 const SEAT_POLL_MS = 30000;
-const DEFAULT_LESSON_KEY = "image-lab";
+const DEFAULT_LESSON_KEY = PAGE_LESSON_KEY || "image-lab";
 const COMIC_VISIBLE_SEAT_COUNT = 15;
 const COMIC_MAX_BUBBLES = 4;
 const COMIC_DIALOGUE_MAX_CHARS = 84;
@@ -1191,7 +1192,14 @@ function fillSteps(steps = buildEmptySteps(state.lessonKey)) {
 function readStorage(key) {
   try {
     const rawValue = window.localStorage.getItem(key);
-    return rawValue ? JSON.parse(rawValue) : null;
+    if (rawValue) return JSON.parse(rawValue);
+    // Read matching pre-route drafts without deleting or overwriting legacy data.
+    if (PAGE_LESSON_KEY && key.endsWith(`:${PAGE_LESSON_KEY}`)) {
+      const legacyValue = window.localStorage.getItem(key.slice(0, -(PAGE_LESSON_KEY.length + 1)));
+      const legacy = legacyValue ? JSON.parse(legacyValue) : null;
+      if ((legacy?.lessonKey || "image-lab") === PAGE_LESSON_KEY) return legacy;
+    }
+    return null;
   } catch (error) {
     return null;
   }
@@ -1207,7 +1215,12 @@ function writeStorage(key, value) {
 
 function removeStorage(key) {
   try {
-    window.localStorage.removeItem(key);
+    if (PAGE_LESSON_KEY && key.endsWith(`:${PAGE_LESSON_KEY}`)) {
+      // A tombstone prevents old pre-route data from returning after leaving.
+      window.localStorage.setItem(key, "null");
+    } else {
+      window.localStorage.removeItem(key);
+    }
   } catch (error) {
     // Ignore storage failures and keep the activity usable.
   }
@@ -1377,6 +1390,9 @@ function renderLessonUi() {
 }
 
 function setLessonKey(nextLessonKey, options = {}) {
+  if (PAGE_LESSON_KEY && normalizeLessonKey(nextLessonKey) !== PAGE_LESSON_KEY) {
+    throw new Error("LESSON_ROUTE_MISMATCH: קוד הכיתה שייך לשיעור אחר. חזרו למעבדת הפרומפטים ובחרו את השיעור שהמורה ביקש.");
+  }
   const shouldResetSteps = options.resetSteps === true;
   const shouldPersist = options.persist !== false;
 
@@ -1815,7 +1831,7 @@ async function loadSeatMap({ showErrors = false } = {}) {
     try {
       response = await fetchSeatMapForLesson(classCode, state.lessonKey);
     } catch (error) {
-      if (!isInvalidClassCodeError(error) || state.sessionId) {
+      if (PAGE_LESSON_KEY || !isInvalidClassCodeError(error) || state.sessionId) {
         throw error;
       }
 
@@ -1981,7 +1997,7 @@ joinForm.addEventListener("submit", async (event) => {
     try {
       response = await joinActivityForLesson(state.lessonKey);
     } catch (error) {
-      if (!isInvalidClassCodeError(error) || state.sessionId) {
+      if (PAGE_LESSON_KEY || !isInvalidClassCodeError(error) || state.sessionId) {
         throw error;
       }
 

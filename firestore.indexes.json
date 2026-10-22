@@ -1,4 +1,11 @@
 {
-  "indexes": [],
+  "indexes": [{
+    "collectionGroup": "studentSessions",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "classCode", "order": "ASCENDING" },
+      { "fieldPath": "lastSeenAt", "order": "DESCENDING" }
+    ]
+  }],
   "fieldOverrides": []
 }

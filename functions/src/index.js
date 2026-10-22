@@ -9,6 +9,7 @@ const logger = require("firebase-functions/logger");
 const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https");
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { buildApiErrorDetails, fetchOpenAiJson } = require("./lib/apiErrors");
+const { serializeStudentActivity, recordStudentApiError } = require("./lib/studentActivity");
 const { deleteClassRecords } = require("./lib/classManagement");
 const { getClassWindow, sanitizeClassWindow, assertClassWindowOpen } = require("./lib/classSchedule");
 const {
@@ -1247,6 +1248,22 @@ exports.adminListClasses = onCall(getCallableOptions(), async (request) => {
   };
 });
 
+exports.adminGetClassActivity = onCall(getCallableOptions(), async (request) => {
+  await requireAdminSession(request.data?.sessionToken);
+  const classCode = normalizeClassCode(request.data?.classCode);
+  if (!classCode) throw new HttpsError("invalid-argument", "יש לבחור כיתה.");
+  const classSnapshot = await db.collection("classAccessCodes").doc(classCode).get();
+  if (!classSnapshot.exists) throw new HttpsError("not-found", "הכיתה לא נמצאה.");
+  const snapshot = await db.collection("studentSessions")
+    .where("classCode", "==", classCode).orderBy("lastSeenAt", "desc").limit(101).get();
+  return {
+    ok: true,
+    classCode,
+    items: snapshot.docs.slice(0, 100).map(serializeStudentActivity),
+    hasMore: snapshot.docs.length > 100
+  };
+});
+
 exports.adminUpsertClass = onCall(getCallableOptions(), async (request) => {
   await requireAdminSession(request.data?.sessionToken);
   const payload = sanitizeClassAdminPayload(request.data);
@@ -1753,6 +1770,9 @@ exports.evaluateFreePrompt = onCall(
         assessment = await assessFreePrompt(new GoogleGenAI({ apiKey }), steps.prompt);
       } catch (error) {
         logger.error("Failed to assess free prompt", error);
+        await recordStudentApiError(sessionRef, error,
+          { provider: "gemini", stage: "prompt-assessment" }, steps, FieldValue.serverTimestamp())
+          .catch((saveError) => logger.error("Failed to record student API error", saveError));
         throw new HttpsError(
           "unavailable",
           "לא הצלחנו לבדוק את הפרומפט כרגע. נסו שוב בעוד רגע.",
@@ -1947,6 +1967,11 @@ exports.generateImage = onCall(
       }
     } catch (error) {
       logger.error("Failed to generate an image from validated prompt steps", error);
+      await recordStudentApiError(sessionRef, error, {
+        provider: errorProvider, stage: errorStage,
+        ...(errorStage === "image-generation" ? { model } : {})
+      }, steps, FieldValue.serverTimestamp())
+        .catch((saveError) => logger.error("Failed to record student API error", saveError));
       throw new HttpsError(
         "internal",
         "לא הצלחתי להכין פרומפט תקין לתמונה. נסו שוב בעוד רגע.",
@@ -1973,6 +1998,9 @@ exports.generateImage = onCall(
       );
     } catch (error) {
       logger.error("Failed to save generated image to Firebase Storage", error);
+      await recordStudentApiError(sessionRef, error,
+        { provider: "firebase-storage", stage: "image-storage" }, steps, FieldValue.serverTimestamp())
+        .catch((saveError) => logger.error("Failed to record student API error", saveError));
     }
 
     const newGenerationCount = generationsCount + 1;

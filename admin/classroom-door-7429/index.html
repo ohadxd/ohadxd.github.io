@@ -6,20 +6,10 @@
   <title>Funlab | ניהול כיתות</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="stylesheet" href="/css/style.css?v=20261008-class-schedule-1" />
-</head>
-<body>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/prompt-lab-design.css"></head>
+<body class="lab-site lab-activity admin-site">
   <div class="wrap">
-    <header class="hero">
-      <div class="hero-inner">
-        <div class="title">
-          <div class="badge"><span class="dot"></span> איזור ניהול סודי</div>
-          <h1>ניהול כיתות</h1>
-          <p class="subtitle">יצירה, פתיחה, סגירה ומחיקה של כיתות, ושינוי מגבלות.</p>
-        </div>
-      </div>
-    </header>
-
-    <main class="grid single-col">
+<header class="admin-heading"><a class="admin-brand" href="/">funlab<span>.</span></a><div><h1>הכיתות שלכם, במקום אחד.</h1><p>מנהלים שיעורים, רואים מה התלמידים יוצרים ומבינים מה צריך עזרה.</p></div><nav aria-label="ניווט ניהול"><a href="#classListCard">כיתות</a><a href="#studentActivityCard">פרומפטים ומשוב</a><a href="#providerSettingsCard">הגדרות AI</a><a href="/">לאתר</a></nav></header>    <main class="grid single-col">
       <section class="card">
         <h2><span class="icon">🔐</span> התחברות מנהל</h2>
         <form id="adminLoginForm" class="form-grid">
@@ -227,9 +217,13 @@
         </div>
         <div id="adminClassGrid" class="admin-class-grid"></div>
       </section>
-    </main>
+<section id="studentActivityCard" class="card" hidden>
+<div class="seat-picker-head"><div><h2>מה התלמידים יוצרים?</h2><p class="field-help">הפרומפטים שנשלחו, היצירה האחרונה ושגיאות API שנשמרו.</p></div><button id="refreshStudentActivityButton" class="btn-ghost btn-small" type="button">רענון</button></div>
+<label for="activityClassSelect">כיתה</label><select id="activityClassSelect" class="input"><option value="">בחרו כיתה</option></select>
+<p id="studentActivityMessage" role="status" aria-live="polite">בחרו כיתה כדי להציג פרומפטים ומשוב.</p><div id="studentActivityList"></div>
+</section>    </main>
   </div>
 
-  <script type="module" src="/js/admin-console.js?v=20261008-class-schedule-1"></script>
+  <script type="module" src="/js/admin-console.js?v=20261022-student-activity"></script>
 </body>
 </html>
