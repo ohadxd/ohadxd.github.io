@@ -1,5 +1,4 @@
 ﻿User-agent: *
 Allow: /
 
-# Replace with your real production sitemap URL after deployment
 Sitemap: https://funlab.co.il/sitemap.xml

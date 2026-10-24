@@ -30,6 +30,7 @@ body.lab-site{margin:0;background:var(--lab-paper);color:var(--lab-ink);font:400
 .class-help svg{height:48px;width:48px;background:#e0eaff;border-radius:50%;padding:9px;fill:none;stroke:#072b8f;stroke-width:1.8;flex:none}.class-help strong{font-size:18px;color:#0739df}.class-help p{margin:0}
 .comic-entry{text-align:center;font-size:15px;margin:15px 0}.comic-entry a{text-decoration:underline;font-weight:600}
 .lab-footer{padding:20px;text-align:center;font-size:13px;color:#47577c}
+.brand-aliases{margin:0 0 8px;line-height:1.6}
 .skip-link{position:absolute;top:8px;right:8px;transform:translateY(-160%);background:white;padding:12px;z-index:100}.skip-link:focus{transform:none}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .lab-activity{--bg:#fffcf5;--text:#071b69;--muted:#4b5877;--line:#dce2ee;--accent:#093de8;--card:#fff;--card2:#eef3ff;--shadow:none}
