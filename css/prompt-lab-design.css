@@ -85,12 +85,14 @@ body.lab-site{margin:0;background:var(--lab-paper);color:var(--lab-ink);font:400
 .home-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
 .sheet-cover{aspect-ratio:3/2}
 .sheet-cover>img{width:200%;height:200%;max-width:none;left:var(--panel-x);top:var(--panel-y)}
+.prompt-lesson-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:1000px;margin-inline:auto}
 .home-grid .lesson-copy h3{font-size:25px}
 .home-grid .lesson-copy p{font-size:17px;min-height:78px}
 .home-grid .blue .lesson-cta{background:#063cf0;color:white!important}
 .home-site .class-help a{text-decoration:underline;font-weight:600;text-underline-offset:4px}
 @media(max-width:1100px){.home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-grid .lesson-copy p{min-height:54px}}
 @media(max-width:640px){.home-grid{grid-template-columns:1fr}.home-grid .lesson-copy h3{font-size:26px}.home-grid .lesson-copy p{min-height:0}.home-site .catalog-heading p{max-width:26ch}.home-site .class-help strong{font-size:17px}}
+@media(max-width:640px){.prompt-lesson-grid{grid-template-columns:1fr}}
 /* Student classrooms: retain the friendly identity around a focused workspace. */
 .lab-activity:not(.admin-site) .activity-heading{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:30px;align-items:center;padding:32px 0}
 .activity-intro-copy{min-width:0}
