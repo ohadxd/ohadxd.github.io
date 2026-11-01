@@ -167,15 +167,19 @@ body.lab-site{margin:0;background:var(--lab-paper);color:var(--lab-ink);font:400
 .classroom-guide summary{cursor:pointer;font-size:22px;font-weight:700;color:#092b86}.classroom-guide[open] summary{margin-bottom:20px}.classroom-guide summary:focus-visible{outline:3px solid #ed6954;outline-offset:5px}
 
 /* Downloads reuse the course-card artwork, typography, and controls. */
-.downloads-grid{grid-template-columns:minmax(0,1fr);max-width:435px;margin-inline:auto}
+.downloads-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:888px;margin-inline:auto}
+.downloads-grid .lesson-tile{display:flex;flex-direction:column}
+.downloads-grid .lesson-copy{display:flex;flex-direction:column;flex:1}
 .download-cover{aspect-ratio:3/2}
 .download-cover>img{width:100%;height:100%;inset:0;object-fit:cover}
-.downloads-site .download-meta{font-size:15px;min-height:0;margin-bottom:18px;color:#47577c}
-.downloads-site .blue .lesson-cta{background:#063cf0;color:white!important}
+.downloads-site .download-meta{font-size:15px;min-height:0;margin-top:auto;margin-bottom:18px;color:#47577c}
+.download-meta a{text-decoration:underline;text-underline-offset:3px}
+.downloads-site .lesson-cta{background:#063cf0;color:white!important}
 .downloads-site .lab-footer{padding-top:30px}
 
 /* Give the added downloads link a second row on small screens. */
 @media(max-width:640px){
+  .downloads-grid{grid-template-columns:minmax(0,1fr);max-width:435px}
   .lab-header nav{height:auto;min-height:78px;flex-wrap:wrap;gap:8px 20px;padding-block:12px}
   .lab-header nav>.lab-brand{order:0;margin-left:auto}
   .lab-header nav>.class-link{order:0}

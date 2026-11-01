@@ -46,6 +46,26 @@ The new route is included in `sitemap.xml`.
 
 ## Artwork provenance
 
+## Hebrew Roblox Studio download — 2026-11-01
+
+- Added a second card titled `רובלוקס סטודיו בעברית`, preserving the Kodu card.
+- Verified release `v0.10.4` in `ohadxd/Roblox-hebrew` and its published asset
+  `HebrewStudioSetup.exe`. The button links directly to that versioned installer;
+  the version label links to the release notes supplied by the user.
+- A HEAD request to the installer returns HTTP 200, with 14,109,414 bytes.
+- Platform label follows the release notes: Windows 10/11 x64.
+- Reuses the existing Roblox panel from `assets/prompt-lab/course-art.png`.
+- The existing downloads grid now has two columns above 640px and one below;
+  card bodies use flex layout to align the download actions.
+- Updated the shared stylesheet URL to `?v=20261101-downloads-2` on all seven
+  student-facing pages that use it.
+- Local HTTP, markup, both installer URLs, release URL, artwork paths, and all
+  six existing lesson-routing tests pass. Browser preview could not be completed:
+  the connected browser did not respond, and the automatic approval check blocked
+  a separate headless Chrome launch (`blocked by policy`).
+
+## Original Kodu artwork provenance
+
 Generated with the built-in image generation tool, using
 `assets/prompt-lab/course-art.png` as the visual reference. Original generated
 output is retained under the user's Codex generated-images directory; the page
