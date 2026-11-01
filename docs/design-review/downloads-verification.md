@@ -31,6 +31,19 @@ The new route is included in `sitemap.xml`.
 - No Firebase changes were made. After local verification, the user explicitly
   requested pushing the completed changes to publish the site.
 
+## Post-publication cache check
+
+- The published homepage and `/downloads/` both return HTTP 200 after GitHub's
+  old cached responses expire. Reloaded the user's previously open 404 tab and
+  confirmed the Kodu page and installer link render there.
+- A browser still held the old shared stylesheet: it lacked `.downloads-grid`
+  and enlarged the illustration to over three times the cover width. The live
+  stylesheet itself already contained the correct rules.
+- Loading the stylesheet with `?v=20261101-downloads` restores the intended card
+  layout and makes the illustration width equal the cover width. All seven
+  student-facing pages using this stylesheet now request this version, so the
+  new HTML does not silently reuse an old browser-cached design.
+
 ## Artwork provenance
 
 Generated with the built-in image generation tool, using
