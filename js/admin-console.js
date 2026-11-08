@@ -658,6 +658,11 @@ createClassForm.addEventListener("submit", async (event) => {
 });
 
 newClassLessonSelect.addEventListener("change", () => {
+  if (newClassLessonSelect.value === "music-lab") {
+    newClassSeatsInput.value = "25";
+    newClassLimitInput.value = "3";
+    return;
+  }
   if (newClassLessonSelect.value === "comic-lab") {
     newClassSeatsInput.value = "15";
     newClassLimitInput.value = "10";
@@ -789,7 +794,7 @@ function renderStudentActivity(items) {
     const heading = document.createElement("h3");
     heading.textContent = item.studentName + " · מקום " + item.seatNumber;
     const meta = document.createElement("p");
-    const lessons = {"image-lab":"בונים תמונה","free-lab":"פרומפט חופשי","comic-lab":"קומיקס"};
+    const lessons = {"image-lab":"בונים תמונה","free-lab":"פרומפט חופשי","comic-lab":"קומיקס","music-lab":"מוזיקה"};
     meta.className = "field-help";
     meta.textContent = (lessons[item.lessonKey] || item.lessonKey) + " · " + item.generationsCount + " יצירות";
     article.append(heading, meta);

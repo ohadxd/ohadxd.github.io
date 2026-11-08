@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Domain: https://funlab.co.il -->
   <url>
@@ -43,4 +43,5 @@
   <url>
     <loc>https://funlab.co.il/courses/thunkable/</loc>
   </url>
+  <url><loc>https://funlab.co.il/courses/prompt-engineering/music-lab/</loc></url>
 </urlset>

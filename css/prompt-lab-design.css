@@ -187,3 +187,5 @@ body.lab-site{margin:0;background:var(--lab-paper);color:var(--lab-ink);font:400
   .lab-header nav>a:not(.lab-brand):not(.class-link){order:2}
   .lab-header nav>a[aria-current]{text-underline-offset:7px}
 }
+
+.music-cover>img{position:static;display:block;width:100%;height:100%;object-fit:cover}.music-tile .lesson-cta{background:#eee6ff;color:#4932aa!important}
