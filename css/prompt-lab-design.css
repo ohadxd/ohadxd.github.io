@@ -84,6 +84,8 @@ body.lab-site{margin:0;background:var(--lab-paper);color:var(--lab-ink);font:400
 
 /* Homepage and course directory share the approved creative-lab identity. */
 .home-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.classroom-cover{aspect-ratio:3/2}
+.classroom-cover>img{width:100%;height:100%;inset:0;object-fit:cover}
 .sheet-cover{aspect-ratio:3/2}
 .sheet-cover>img{width:200%;height:200%;max-width:none;left:var(--panel-x);top:var(--panel-y)}
 .prompt-lesson-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:1000px;margin-inline:auto}
